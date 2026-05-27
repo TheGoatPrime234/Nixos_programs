@@ -4,6 +4,7 @@ mod generator;
 mod get;
 mod git;
 mod nix;
+mod list;
 
 use check::*;
 use files::*;
@@ -11,10 +12,11 @@ use generator::*;
 use get::*;
 use git::*;
 use nix::*;
+use list::*;
 
 use std::process::{self, Command};
 use std::collections::HashMap;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use log::{debug, info, error};
 use inquire::Select;
 
@@ -36,12 +38,8 @@ pub enum Commands {
     },
     Clean,
     Debug {
-        #[arg(short, long)]
-        tailfetch: bool,
-        #[arg(short, long)]
-        selecthost: bool,
-        #[arg(short, long)]
-        gethardware: bool,
+        #[arg(value_enum)]
+        option: ListDebug,
     },
     RemoteInstall,
 }
@@ -70,16 +68,8 @@ pub fn main() {
             files_crylia_finish();
             git_full(String::from("Xanterella Remote-Install cleanup"));
         },
-        Commands::Debug { tailfetch, selecthost, gethardware } => {
-            if *tailfetch {
-                debug!("{:?}", get_taildevices());
-            } else if *selecthost {
-                debug!("{}", select_host(get_taildevices()));
-            } else if *gethardware {
-                get_ssh_hardware(&String::from("127.0.0.1"));
-            } else {
-                debug!("No Args")
-            }
+        Commands::Debug { option } => {
+            list_debug(&option);
         },
         Commands::RemoteInstall => {
             remote_install();

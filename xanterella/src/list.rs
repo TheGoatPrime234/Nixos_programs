@@ -1,11 +1,14 @@
+use clap::{ValueEnum};
 use log::{debug, info, error};
 use std::process::{self, Command};
 
 use crate::*;
 
+#[derive(ValueEnum, Clone, Debug)]
 pub enum ListDebug {
     Drives,
     Taildevices,
+    Hardware,
 }
 
 pub fn list_debug(function: &ListDebug) {
@@ -15,6 +18,10 @@ pub fn list_debug(function: &ListDebug) {
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());
+        },
+        ListDebug::Hardware => {
+            let target_ip = select_host(get_taildevices());
+            println!("{}", get_ssh_hardware(&target_ip));
         },
     }
 }
