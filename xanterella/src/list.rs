@@ -14,7 +14,7 @@ pub enum ListDebug {
 pub fn list_debug(function: &ListDebug) {
     match function {
         ListDebug::Drives => {
-            for i in get_drives().blockdevices {
+            for i in get_drives(String::from("127.0.0.1")).blockdevices {
                 println!(" - - - - - - -");
                 println!("{}", i.name);
                 println!("  {}", i.size);

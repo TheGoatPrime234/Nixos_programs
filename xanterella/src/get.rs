@@ -53,19 +53,43 @@ pub fn get_ssh_hardware(ip: &String) -> String {
     hardware_config
 }
 
-pub fn get_drives() -> Drives {
-    let lsblk = Command::new("lsblk")
+pub fn get_drives(ip: String) -> Drives {
+    let parsed_drives;
+
+    let ssh_command_root = format!("root@{}", ip);
+    let lsblk = Command::new("ssh")
+        .arg(&ssh_command_root)
+        .arg("lsblk")
         .arg("--json")
         .output()
         .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); process::exit(1); });
     if !lsblk.status.success() {
         let err = String::from_utf8_lossy(&lsblk.stderr);
-        error!("[ FAILED ] - Fehler beim Auslesen der Partitionen: {}", err);
-        process::exit(1);
+        error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", err);
+
+        let ssh_command_cato = format!("cato@{}", ip);
+        let lsblk1 = Command::new("ssh")
+            .arg(&ssh_command_cato)
+            .arg("lsblk")
+            .arg("--json")
+            .output()
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); process::exit(1); });
+        if !lsblk1.status.success() {
+            let err = String::from_utf8_lossy(&lsblk1.stderr);
+            error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", err);
+            process::exit(1);
+
+        } else {
+            info!("[ OK ] - Drives mit Cato geparsen");
+            parsed_drives = serde_json::from_slice::<Drives>(&lsblk1.stdout)
+                .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
+        }
+    } else {
+        info!("[ OK ] - Drives mit Root geparsen");
+        parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
     }
     info!("[ OK ] - Drives erfasst");
-    let parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
     info!("[ OK ] - Drives geparset");
     parsed_drives
 }

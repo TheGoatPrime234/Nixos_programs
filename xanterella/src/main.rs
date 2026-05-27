@@ -5,6 +5,7 @@ mod get;
 mod git;
 mod nix;
 mod list;
+mod select;
 
 use check::*;
 use files::*;
@@ -13,6 +14,7 @@ use get::*;
 use git::*;
 use nix::*;
 use list::*;
+use select::*;
 
 use std::process::{self, Command};
 use std::collections::HashMap;
@@ -41,7 +43,10 @@ pub enum Commands {
         #[arg(value_enum)]
         option: ListDebug,
     },
-    RemoteInstall,
+    RemoteInstall {
+        #[arg(long, short)]
+        automate: bool,
+    },
 }
 
 pub fn main() {
@@ -71,13 +76,13 @@ pub fn main() {
         Commands::Debug { option } => {
             list_debug(&option);
         },
-        Commands::RemoteInstall => {
-            remote_install();
+        Commands::RemoteInstall { automate } => {
+            remote_install(&automate);
         },
     }
 }
 
-pub fn remote_install() {
+pub fn remote_install(automate: &bool) {
     let target_ip = select_host(get_taildevices());
     ssh_ping(&target_ip);
     get_ssh_hardware(&target_ip);
@@ -88,29 +93,4 @@ pub fn remote_install() {
     // -----------------------------------------------------
     files_crylia_finish();
     git_full(String::from("Xanterella Remote-Install cleanup"));
-}
-
-pub fn select_host(hosts: Taildevices) -> String {
-    let mut options: Vec<String> = vec![];
-    let mut output_ip: String = String::from("127.0.0.1");
-    for (_pubkey, device_info) in hosts.devices {
-        let ip: &str = device_info.ip.first().map(|s| s.as_str()).unwrap_or("Keine IP");
-        let input = format!("IP: {:<15} - Name: {}", ip, device_info.name);
-        options.push(input);
-    }
-    let answer = Select::new("Select Hosts", options).prompt();
-    match answer {
-        Ok(choice) => {
-            if let Some((ip, _name)) = choice.split_once(" - Name: ") {
-                let clean_ip: &str = ip.strip_prefix("IP: ").unwrap_or(ip).trim();
-                output_ip = String::from(clean_ip);
-            }
-        },
-        Err(e) => {
-            error!("[ FAILED ] - Konnte den Input nicht auslesen: {}", e);
-            process::exit(1);
-        }
-    }
-    debug!("Output IP: {}", output_ip);
-    output_ip 
 }
