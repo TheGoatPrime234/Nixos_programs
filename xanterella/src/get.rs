@@ -4,16 +4,20 @@ use std::process::{self, Command};
 use log::{debug, info, error};
 use std::fs;
 use std::collections::HashMap;
+use serde::{Deserialize};
 
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Drives {
-    pub medium: HashMap<String, Partition>,
+    pub blockdevices: Vec<BlockDevice>,
 }
 
-#[derive(Debug)]
-pub struct Partition {
-    pub partitions: String,
+#[derive(Deserialize, Debug)]
+pub struct BlockDevice {
+    pub name: String,
     pub size: String,
+
+    #[serde(rename = "type")]
+    pub device_type: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -50,41 +54,20 @@ pub fn get_ssh_hardware(ip: &String) -> String {
 }
 
 pub fn get_drives() -> Drives {
-    let mut drives = Drives {
-        medium: HashMap::new(),
-    };
-
-    let fdisk = Command::new("sudo")
-        .arg("fdisk")
-        .arg("-l")
+    let lsblk = Command::new("lsblk")
+        .arg("--json")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte fdisk nicht starten: {}", err); process::exit(1); });
-    if !fdisk.status.success() {
-        let err = String::from_utf8_lossy(&fdisk.stderr);
+        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); process::exit(1); });
+    if !lsblk.status.success() {
+        let err = String::from_utf8_lossy(&lsblk.stderr);
         error!("[ FAILED ] - Fehler beim Auslesen der Partitionen: {}", err);
         process::exit(1);
     }
-
-    let output = String::from_utf8_lossy(&fdisk.stdout);
-    debug!("fdisk output: \n{}", output);
-    for i in output.lines() {
-        if !i.starts_with("Disk /dev/") {
-            continue;
-        }
-        debug!("gefundende Zeilen: {}", i);
-        if let Some((links, rechts)) = i.split_once(", ") {
-            let name = links.replace("Disk /dev/", "");
-            if let Some((groesse, _rest)) = rechts.split_once(", ") {
-                let partition = Partition {
-                    partitions: String::from("TBD"),
-                    size: groesse.to_string(),
-                };
-                drives.medium.insert(name, partition);
-            }
-        }
-    }
-    debug!("Erkannte drives: \n{:?}", drives);
-    drives
+    info!("[ OK ] - Drives erfasst");
+    let parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
+        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
+    info!("[ OK ] - Drives geparset");
+    parsed_drives
 }
 
 pub fn get_taildevices() -> Taildevices {
@@ -104,4 +87,3 @@ pub fn get_taildevices() -> Taildevices {
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
         .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); process::exit(1); })
 }
-

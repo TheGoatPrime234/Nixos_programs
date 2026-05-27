@@ -14,7 +14,12 @@ pub enum ListDebug {
 pub fn list_debug(function: &ListDebug) {
     match function {
         ListDebug::Drives => {
-            println!("{:?}", get_drives());
+            for i in get_drives().blockdevices {
+                println!(" - - - - - - -");
+                println!("{}", i.name);
+                println!("  {}", i.size);
+                println!("  {}", i.device_type);
+            }
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());
