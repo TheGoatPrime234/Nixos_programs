@@ -35,7 +35,7 @@ pub fn select_drive(target_ip: &String, automate: bool) -> String {
         let input = format!("Name: {:<7} - Size: {}", i.name, i.size);
         options.push(input);
     }
-    if automate {
+    if !automate {
         let answer = Select::new("Select Disk", options).prompt();
         let mut output_name: String = String::from("");
         match answer {

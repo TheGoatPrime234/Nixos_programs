@@ -6,6 +6,7 @@ mod git;
 mod nix;
 mod list;
 mod select;
+mod drives;
 
 use check::*;
 use files::*;
@@ -15,6 +16,7 @@ use git::*;
 use nix::*;
 use list::*;
 use select::*;
+use drives::*;
 
 use std::process::{self, Command};
 use std::collections::HashMap;
@@ -89,7 +91,8 @@ pub fn remote_install(automate: &bool) {
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
     nix_check();
-    nix_install(&target_ip);
+    drives_part(&select_drive(&target_ip, *automate), true);
+    //nix_install(&target_ip);
     // -----------------------------------------------------
     files_crylia_finish();
     git_full(String::from("Xanterella Remote-Install cleanup"));

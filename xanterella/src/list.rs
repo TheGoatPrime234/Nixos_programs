@@ -20,7 +20,7 @@ pub fn list_debug(function: &ListDebug) {
                 println!("  {}", i.size);
                 println!("  {}", i.device_type);
             };
-            select_drive(&String::from("127.0.0.1"), false);
+            drives_part(&select_drive(&String::from("127.0.0.1"), false), true);
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());
