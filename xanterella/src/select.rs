@@ -30,25 +30,29 @@ pub fn select_host(hosts: Taildevices) -> String {
 
 pub fn select_drive(target_ip: &String, automate: bool) -> String {
     let mut options: Vec<String> = vec![];
-    let mut output_name = String::from("");
-    //for i in get_drives(String::from("127.0.0.1")).blockdevices {
-    for i in get_drives((&target_ip).to_string()).blockdevices {
+    let drives = get_drives((&target_ip).to_string()).blockdevices;
+    for i in &drives {
         let input = format!("Name: {:<7} - Size: {}", i.name, i.size);
         options.push(input);
     }
-    let answer = Select::new("Select Disk", options).prompt();
-    match answer {
-        Ok(choice) => {
-            if let Some((name, _size)) = choice.split_once(" - Size: ") {
-                let clean_name: &str = name.strip_prefix("Name: ").unwrap_or(name).trim();
-                output_name = String::from(clean_name);
+    if automate {
+        let answer = Select::new("Select Disk", options).prompt();
+        let mut output_name: String = String::from("");
+        match answer {
+            Ok(choice) => {
+                if let Some((name, _size)) = choice.split_once(" - Size: ") {
+                    let clean_name: &str = name.strip_prefix("Name: ").unwrap_or(name).trim();
+                    output_name = String::from(clean_name);
+                }
+            },
+            Err(e) => {
+                error!("[ FAILED ] - Konnte den Input nicht auslesen: {}", e);
+                process::exit(1);
             }
-        },
-        Err(e) => {
-            error!("[ FAILED ] - Konnte den Input nicht auslesen: {}", e);
-            process::exit(1);
         }
+        debug!("Output Name: {}", output_name);
+        output_name
+    } else {
+        drives[0].name.clone()
     }
-    debug!("Output Name: {}", output_name);
-    output_name
 }

@@ -10,7 +10,7 @@ pub enum Paths {
 
 pub fn gen_path(option: Paths) -> String {
     let home = env::var("HOME").expect("[ FAILED ] - Konnte die Home Variable nicht extrahieren");
-    let nixconfig = PathBuf::from(&home).join("nixos-config");
+    let nixconfig = PathBuf::from(&home).join("xanterella");
     let result: PathBuf = match option {
         Paths::Nixconf => nixconfig,
     };
