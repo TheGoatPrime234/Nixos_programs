@@ -8,13 +8,13 @@ pub fn select_host(hosts: Taildevices) -> String {
     let mut output_ip: String = String::from("127.0.0.1");
     for (_pubkey, device_info) in hosts.devices {
         let ip: &str = device_info.ip.first().map(|s| s.as_str()).unwrap_or("Keine IP");
-        let input = format!("IP: {:<15} - Name: {}", ip, device_info.name);
+        let input = format!("IP: {:<15} - OS: {:<7} Name: {}", ip, device_info.os, device_info.name);
         options.push(input);
     }
     let answer = Select::new("Select Hosts", options).prompt();
     match answer {
         Ok(choice) => {
-            if let Some((ip, _name)) = choice.split_once(" - Name: ") {
+            if let Some((ip, _name)) = choice.split_once(" - OS: ") {
                 let clean_ip: &str = ip.strip_prefix("IP: ").unwrap_or(ip).trim();
                 output_ip = String::from(clean_ip);
             }

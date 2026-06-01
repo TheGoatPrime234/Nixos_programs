@@ -32,6 +32,8 @@ pub struct DeviceInfo {
     pub name: String,
     #[serde(rename = "TailscaleIPs")]
     pub ip: Vec<String>,
+    #[serde(rename = "OS")]
+    pub os: String,
 }
 
 pub fn get_ssh_hardware(ip: &String) -> String {
