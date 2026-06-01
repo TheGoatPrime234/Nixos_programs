@@ -39,8 +39,6 @@ pub enum Commands {
         compact: bool,
         #[arg(short = 'e', long = "extended", conflicts_with = "compact")]
         extended: bool,
-        #[arg(short = 'a', long = "all", conflicts_with = "app")]
-        all: bool,
     },
     Listapps,
     Statusall {
@@ -85,8 +83,8 @@ pub fn main() {
             println!("Starte Nix-Timetracker als Daemon");
             run_daemon();
         }
-        Commands::Status { app, json, readable, compact, extended, all } => {
-            get_status(app, &take_input(*json, *readable, *compact, *extended, *all), None);
+        Commands::Status { app, json, readable, compact, extended } => {
+            get_status(app, &take_input(*json, *readable, *compact, *extended), None);
         }
         Commands::Listapps => {
             list_apps();
@@ -194,20 +192,25 @@ pub fn run_daemon() {
     }
 }
 
-pub fn get_status(app_name: &str, format: &Format, color_index: Option<usize>, all: bool) {
+pub fn get_status(app_name: &str, format: &Format, color_index: Option<usize>) {
+    let total_seconds: u64;
     let conn = rusqlite::Connection::open("/home/cato/.config/nix-timetracker/entries.db")
         .expect("Konnte Datenbank für Status-Abfrage nicht öffnen!");
-    if all {
+    if app_name == "all" {
       let mut stmt = conn.prepare("SELECT SUM(duration) FROM entry")
         .expect("Konnte die SQL-Query nicht vorbereiten!");
-      let total_seconds: u64 = stmt.query_row(rustqli
+      total_seconds = stmt.query_row(rusqlite::params![], |row| {
+          let val: Option<i64> = row.get(0)?;
+          Ok(val.unwrap_or(0))
+      }).unwrap_or(0).try_into().unwrap();
+    }
     else {
       let mut stmt = conn.prepare("SELECT SUM(duration) FROM entry WHERE name = ?1")
           .expect("Konnte SQL-Query nicht vorbereiten!");
-      let total_seconds: u64 = stmt.query_row(rusqlite::params![app_name], |row| {
+      total_seconds = stmt.query_row(rusqlite::params![app_name], |row| {
           let val: Option<i64> = row.get(0)?;
           Ok(val.unwrap_or(0))
-      }).unwrap_or(0).try_into().unwrap()
+      }).unwrap_or(0).try_into().unwrap();
     } 
 
     let mut current_level = 0;
@@ -265,7 +268,7 @@ pub fn get_status_all(format: Format) {
         .filter_map(|res| res.ok()) 
         .collect();
     for (index, i) in apps.iter().enumerate() {
-        get_status(&i, &format, Some(index), false);
+        get_status(&i, &format, Some(index));
     }
 }
 
