@@ -193,14 +193,25 @@ pub fn run_daemon() {
 }
 
 pub fn get_status(app_name: &str, format: &Format, color_index: Option<usize>) {
+    let total_seconds: u64;
     let conn = rusqlite::Connection::open("/home/cato/.config/nix-timetracker/entries.db")
         .expect("Konnte Datenbank für Status-Abfrage nicht öffnen!");
-    let mut stmt = conn.prepare("SELECT SUM(duration) FROM entry WHERE name = ?1")
-        .expect("Konnte SQL-Query nicht vorbereiten!");
-    let total_seconds: u64 = stmt.query_row(rusqlite::params![app_name], |row| {
-        let val: Option<i64> = row.get(0)?;
-        Ok(val.unwrap_or(0))
-    }).unwrap_or(0).try_into().unwrap(); 
+    if app_name == "all" {
+      let mut stmt = conn.prepare("SELECT SUM(duration) FROM entry")
+        .expect("Konnte die SQL-Query nicht vorbereiten!");
+      total_seconds = stmt.query_row(rusqlite::params![], |row| {
+          let val: Option<i64> = row.get(0)?;
+          Ok(val.unwrap_or(0))
+      }).unwrap_or(0).try_into().unwrap();
+    }
+    else {
+      let mut stmt = conn.prepare("SELECT SUM(duration) FROM entry WHERE name = ?1")
+          .expect("Konnte SQL-Query nicht vorbereiten!");
+      total_seconds = stmt.query_row(rusqlite::params![app_name], |row| {
+          let val: Option<i64> = row.get(0)?;
+          Ok(val.unwrap_or(0))
+      }).unwrap_or(0).try_into().unwrap();
+    } 
 
     let mut current_level = 0;
     let mut remaining_seconds = total_seconds as f64; 
