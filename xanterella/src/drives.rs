@@ -17,7 +17,6 @@ pub fn drives_name(primdrive: &String, number: i8) -> String {
 
 pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Starte formatierung und partitionierung");
-    let ssh_string = format!("root@{}", ip);
     let drive = format!("/dev/{}", primdrive);
     
     if !debug {
@@ -87,13 +86,28 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     };
     info!("[ OK ] - Ext4 Partition formatiert");
 
-    info!("[ OK ] - Drive fertig partitioniert");
+    info!("[ OK ] - Formatierungs & Partitionierungs Prozess erfolgreich");
 }
 
 pub fn drives_mount(primdrive: String, ip: String) {
 
+        let boot = Command::new("ssh")
+            .arg(get_sshstring(&ip))
+            .arg("mount")
+            .arg(drives_name(&primdrive, 1))
+            .arg("/mnt/boot")
+            .arg("-p")
+            .output()
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
+        if !boot.status.success() {
+            let err = String::from_utf8_lossy(&boot.stderr);
+            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", err);
+            process::exit(1);
+        }
+        info!("[ OK ] - Boot Partition gemounted");
+
         let root = Command::new("ssh")
-            .arg(get_sshstring(&primdrive))
+            .arg(get_sshstring(&ip))
             .arg("mount")
             .arg(drives_name(&primdrive, 1))
             .arg("/mnt")
@@ -106,18 +120,5 @@ pub fn drives_mount(primdrive: String, ip: String) {
         }
         info!("[ OK ] - Root Partition gemounted");
 
-        let boot = Command::new("ssh")
-            .arg(get_sshstring(&primdrive))
-            .arg("mount")
-            .arg(drives_name(&primdrive, 1))
-            .arg("/mnt/boot")
-            .arg("-p")
-            .output()
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
-        if !boot.status.success() {
-            let err = String::from_utf8_lossy(&boot.stderr);
-            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", err);
-            process::exit(1);
-        }
-        info!("[ OK ] - Root Partition gemounted");
+        info!("[ OK ] - Mount Prozess erfolgreich");
 }

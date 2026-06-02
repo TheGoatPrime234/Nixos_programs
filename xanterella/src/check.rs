@@ -1,5 +1,5 @@
 use std::process::{self, Command};
-use log::{debug, info, error};
+use log::{info, error};
 
 use crate::generator::*;
 
