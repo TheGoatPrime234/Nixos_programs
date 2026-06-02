@@ -9,7 +9,10 @@ pub fn ssh_ping(ip: &String) {
         .args(["-W", "1"])
         .arg(ip)
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Ping nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Ping nicht starten: {}", err); 
+            process::exit(1); 
+        });
 
     if !ping.status.success() {
         error!("[ FAILED ] - Konnte das Gerät nicht pingen: {}", ip);
@@ -21,7 +24,10 @@ pub fn ssh_ping(ip: &String) {
     let ssh = Command::new("ssh")
         .arg(&ssh_command)
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Tailscale nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Tailscale nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !ssh.status.success() {
         error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", ssh_command);
         process::exit(1);
@@ -36,12 +42,14 @@ pub fn nix_check() {
         .arg(".#crylia")
         .current_dir(gen_path(Paths::Nixconf))
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Nixos-rebuild nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Nixos-rebuild nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if check.status.success() {
         info!("[ OK ] - Nix Flake ist funktionstüchtig");
     } else {
-        let err = String::from_utf8_lossy(&check.stderr);
-        error!("[ FAILED ] - Die Nix Flake ist nicht funktionierend: {}", err);
+        error!("[ FAILED ] - Die Nix Flake ist nicht funktionierend: {}", String::from_utf8_lossy(&check.stderr));
         process::exit(1);
     }
 }
