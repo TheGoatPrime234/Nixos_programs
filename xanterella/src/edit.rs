@@ -19,3 +19,6 @@ pub fn edit_pars_files() -> Vec<String> {
     debug!("{}", files);
     files
 }
+
+pub fn edit_add_host(name: String, ip: String) {
+    
