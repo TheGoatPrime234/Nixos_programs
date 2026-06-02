@@ -3,6 +3,7 @@ use crate::generator::*;
 use std::process::{self, Command};
 use log::{debug, info, error};
 use walkdir:: WalkDir;
+use std::io;
 
 pub fn edit_pars_files() -> Vec<String> {
     let files: Vec<String> = WalkDir::new(&gen_path(Paths::Nixconf)
@@ -21,4 +22,6 @@ pub fn edit_pars_files() -> Vec<String> {
 }
 
 pub fn edit_add_host(name: String, ip: String) {
+    let file_path = format!("{}/hosts/{}/configuration.nix", gen_path(Paths::Nixconf), name);
+    fs::write_file
     
