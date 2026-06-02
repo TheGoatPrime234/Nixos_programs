@@ -1,6 +1,8 @@
 use std::process::{self, Command};
 use log::{info, error};
 
+use crate::*;
+
 pub fn drives_name(primdrive: &String, number: i8) -> String {
     let drive = format!("/dev/{}", primdrive);
     let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmclblk") {
@@ -20,7 +22,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     
     if !debug {
         let parted_efi = Command::new("ssh")
-            .arg(&ssh_string)
+            .arg(get_sshstring(&ip))
             .arg("parted")
             .arg("-s")
             .arg(&drive)
@@ -39,7 +41,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
 
     if !debug {
         let parted_root = Command::new("ssh")
-            .arg(&ssh_string)
+            .arg(get_sshstring(&ip))
             .arg("parted")
             .arg("-s")
             .arg(&drive)
@@ -56,7 +58,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
 
     if !debug {
         let mkfs_efi = Command::new("ssh")
-            .arg(&ssh_string)
+            .arg(get_sshstring(&ip))
             .arg("mkfs.fat")
             .arg(drives_name(&primdrive, 1))
             .args(["-F", "32"])
@@ -72,7 +74,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
 
     if !debug {
         let mkfs_root = Command::new("ssh")
-            .arg(&ssh_string)
+            .arg(get_sshstring(&ip))
             .arg("mkfs.ext4")
             .arg(drives_name(&primdrive, 2))
             .output()
@@ -86,4 +88,36 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Ext4 Partition formatiert");
 
     info!("[ OK ] - Drive fertig partitioniert");
+}
+
+pub fn drives_mount(primdrive: String, ip: String) {
+
+        let root = Command::new("ssh")
+            .arg(get_sshstring(&primdrive))
+            .arg("mount")
+            .arg(drives_name(&primdrive, 1))
+            .arg("/mnt")
+            .output()
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
+        if !root.status.success() {
+            let err = String::from_utf8_lossy(&root.stderr);
+            error!("[ FAILED ] - Konnte die Root Partition nicht mounten: {}", err);
+            process::exit(1);
+        }
+        info!("[ OK ] - Root Partition gemounted");
+
+        let boot = Command::new("ssh")
+            .arg(get_sshstring(&primdrive))
+            .arg("mount")
+            .arg(drives_name(&primdrive, 1))
+            .arg("/mnt/boot")
+            .arg("-p")
+            .output()
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
+        if !boot.status.success() {
+            let err = String::from_utf8_lossy(&boot.stderr);
+            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", err);
+            process::exit(1);
+        }
+        info!("[ OK ] - Root Partition gemounted");
 }

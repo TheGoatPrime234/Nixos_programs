@@ -113,3 +113,7 @@ pub fn get_taildevices() -> Taildevices {
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
         .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); process::exit(1); })
 }
+
+pub fn get_sshstring(ip: &String) -> String {
+    format!("root@{}", ip)
+}
