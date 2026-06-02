@@ -1,19 +1,23 @@
 use std::process::{self, Command};
 use log::{info, error};
 
+pub fn drives_name(primdrive: &String, number: i8) -> String {
+    let drive = format!("/dev/{}", primdrive);
+    let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmclblk") {
+        "p"
+    } else {
+        ""
+    };
+    let partition = format!("{}{}{}", drive, p_suffix, number);
+    partition
+}
+
+
 pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Starte formatierung und partitionierung");
     let ssh_string = format!("root@{}", ip);
     let drive = format!("/dev/{}", primdrive);
-    let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmcblk") { 
-        "p" 
-    } else { 
-        "" 
-    };
     
-    let efi_partition = format!("{}{}{}", drive, p_suffix, "1");
-    let root_partition = format!("{}{}{}", drive, p_suffix, "2");
-
     if !debug {
         let parted_efi = Command::new("ssh")
             .arg(&ssh_string)
@@ -54,7 +58,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
         let mkfs_efi = Command::new("ssh")
             .arg(&ssh_string)
             .arg("mkfs.fat")
-            .arg(&efi_partition)
+            .arg(drives_name(&primdrive, 1))
             .args(["-F", "32"])
             .output()
             .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); process::exit(1); });
@@ -70,7 +74,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
         let mkfs_root = Command::new("ssh")
             .arg(&ssh_string)
             .arg("mkfs.ext4")
-            .arg(&root_partition)
+            .arg(drives_name(&primdrive, 2))
             .output()
             .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); process::exit(1); });
         if !mkfs_root.status.success() {
