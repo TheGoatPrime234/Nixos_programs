@@ -4,6 +4,9 @@ mod generator;
 mod get;
 mod git;
 mod nix;
+mod list;
+mod select;
+mod drives;
 
 use check::*;
 use files::*;
@@ -11,10 +14,13 @@ use generator::*;
 use get::*;
 use git::*;
 use nix::*;
+use list::*;
+use select::*;
+use drives::*;
 
 use std::process::{self, Command};
 use std::collections::HashMap;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use log::{debug, info, error};
 use inquire::Select;
 
@@ -36,14 +42,13 @@ pub enum Commands {
     },
     Clean,
     Debug {
-        #[arg(short, long)]
-        tailfetch: bool,
-        #[arg(short, long)]
-        selecthost: bool,
-        #[arg(short, long)]
-        gethardware: bool,
+        #[arg(value_enum)]
+        option: ListDebug,
     },
-    RemoteInstall,
+    RemoteInstall {
+        #[arg(long = "automate", short = 'a')]
+        automate: bool,
+    },
 }
 
 pub fn main() {
@@ -70,57 +75,25 @@ pub fn main() {
             files_crylia_finish();
             git_full(String::from("Xanterella Remote-Install cleanup"));
         },
-        Commands::Debug { tailfetch, selecthost, gethardware } => {
-            if *tailfetch {
-                debug!("{:?}", get_taildevices());
-            } else if *selecthost {
-                debug!("{}", select_host(get_taildevices()));
-            } else if *gethardware {
-                get_ssh_hardware(&String::from("127.0.0.1"));
-            } else {
-                debug!("No Args")
-            }
+        Commands::Debug { option } => {
+            list_debug(&option);
         },
-        Commands::RemoteInstall => {
-            remote_install();
+        Commands::RemoteInstall { automate } => {
+            remote_install(&automate);
         },
     }
 }
 
-pub fn remote_install() {
+pub fn remote_install(automate: &bool) {
     let target_ip = select_host(get_taildevices());
     ssh_ping(&target_ip);
     get_ssh_hardware(&target_ip);
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
     nix_check();
-    nix_install(&target_ip);
+    drives_part(&select_drive(&target_ip, *automate), true, &target_ip);
+    //nix_install(&target_ip);
     // -----------------------------------------------------
     files_crylia_finish();
     git_full(String::from("Xanterella Remote-Install cleanup"));
-}
-
-pub fn select_host(hosts: Taildevices) -> String {
-    let mut options: Vec<String> = vec![];
-    let mut output_ip: String = String::from("127.0.0.1");
-    for (_pubkey, device_info) in hosts.devices {
-        let ip: &str = device_info.ip.first().map(|s| s.as_str()).unwrap_or("Keine IP");
-        let input = format!("IP: {:<15} - Name: {}", ip, device_info.name);
-        options.push(input);
-    }
-    let answer = Select::new("Select Hosts", options).prompt();
-    match answer {
-        Ok(choice) => {
-            if let Some((ip, _name)) = choice.split_once(" - Name: ") {
-                let clean_ip: &str = ip.strip_prefix("IP: ").unwrap_or(ip).trim();
-                output_ip = String::from(clean_ip);
-            }
-        },
-        Err(e) => {
-            error!("[ FAILED ] - Konnte den Input nicht auslesen: {}", e);
-            process::exit(1);
-        }
-    }
-    debug!("Output IP: {}", output_ip);
-    output_ip 
 }

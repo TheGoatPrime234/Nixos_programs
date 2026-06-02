@@ -1,7 +1,10 @@
 # Funktionen die implementiert werden sollen
 - [ ] Remote Installation
-    - [ ] Tailscale IPs
-    - [ ] Hardware Config einbinden
+    - [x] Tailscale IPs
+    - [x] Hardware Config einbinden
+    - [x] Partitionierung
+        - [ ] Partitionierung bei mehr als einer Festplatte
+     [x] Installierung
 - [ ] Init Setup
     - [ ] Git
     - [ ] Github
