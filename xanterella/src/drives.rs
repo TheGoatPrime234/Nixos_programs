@@ -122,3 +122,61 @@ pub fn drives_mount(primdrive: String, ip: String) {
 
         info!("[ OK ] - Mount Prozess erfolgreich");
 }
+
+pub fn build_and_deploy(ip: &String) {
+    info!("[ OK ] - Starte Build and Deployment");
+    
+    let build = Command::new("nix")
+        .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
+        .current_dir(gen_path(Paths::Nixconf))
+        .output()
+        .unwrap_or_else(|err| { 
+            error!("Konnte nix build nicht starten: {}", err); 
+            process::exit(1); 
+        });
+    if !build.status.success() {
+        error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
+        process::exit(1);
+    }
+
+    let result_symlink = format!("{}/result", gen_path(Paths::Nixconf);
+
+    let system_path = fs::read_link(&result_symlink)
+        .unwrap_or_else(|err| { 
+            error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
+            process::exit(1); 
+        })
+        .to_string_lossy()
+        .into_owned();
+    
+    debug!("System-Pfad im Nix-Store lautet: {}", system_path);
+
+    info!("[ OK ] - Kopiere System-Closure auf Zielgerät");
+    env::set_var("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null");
+    
+    let copy = Command::new("nix")
+        .args(["copy", "--to", &format!("ssh://root@{}", ip), "./result"])
+        .current_dir(&flake_dir)
+        .output()
+        .unwrap_or_else(|err| { error!("Konnte nix copy nicht starten: {}", err); process::exit(1); });
+    if !copy.status.success() {
+        error!("[ FAILED ] - Kopieren fehlgeschlagen: {}", String::from_utf8_lossy(&copy.stderr));
+        process::exit(1);
+    }
+
+    info!("[ OK ] - Starte die Installation auf dem Zielgerät...");
+    let install_cmd = format!("nixos-install --system {} --root /mnt --no-root-passwd", system_path);
+    
+    let install = Command::new("ssh")
+        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(format!("root@{}", ip))
+        .arg(&install_cmd)
+        .output()
+        .unwrap_or_else(|err| { error!("Konnte SSH nicht starten: {}", err); process::exit(1); });
+    if !install.status.success() {
+        error!("[ FAILED ] - nixos-install fehlgeschlagen: {}", String::from_utf8_lossy(&install.stderr));
+        process::exit(1);
+    }
+
+    info!("[ OK ] - Installation erfolgreich abgeschlossen!");
+}
