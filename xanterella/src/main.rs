@@ -46,7 +46,7 @@ pub enum Commands {
         option: ListDebug,
     },
     RemoteInstall {
-        #[arg(long, short)]
+        #[arg(long = "automate", short = 'a')]
         automate: bool,
     },
 }
@@ -91,7 +91,7 @@ pub fn remote_install(automate: &bool) {
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
     nix_check();
-    drives_part(&select_drive(&target_ip, *automate), true);
+    drives_part(&select_drive(&target_ip, *automate), true, &target_ip);
     //nix_install(&target_ip);
     // -----------------------------------------------------
     files_crylia_finish();

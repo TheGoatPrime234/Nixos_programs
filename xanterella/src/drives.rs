@@ -1,8 +1,9 @@
 use std::process::{self, Command};
 use log::{info, error};
 
-pub fn drives_part(primdrive: &String, debug: bool) {
+pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Starte formatierung und partitionierung");
+    let ssh_string = format!("root@{}", ip);
     let drive = format!("/dev/{}", primdrive);
     let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmcblk") { 
         "p" 
@@ -14,7 +15,9 @@ pub fn drives_part(primdrive: &String, debug: bool) {
     let root_partition = format!("{}{}{}", drive, p_suffix, "2");
 
     if !debug {
-            let parted_efi = Command::new("parted")
+        let parted_efi = Command::new("ssh")
+            .arg(&ssh_string)
+            .arg("parted")
             .arg("-s")
             .arg(&drive)
             .args(["mklabel", "gpt"])
@@ -31,7 +34,9 @@ pub fn drives_part(primdrive: &String, debug: bool) {
     info!("[ OK ] - Efi Partition erstellt");
 
     if !debug {
-        let parted_root = Command::new("parted")
+        let parted_root = Command::new("ssh")
+            .arg(&ssh_string)
+            .arg("parted")
             .arg("-s")
             .arg(&drive)
             .args(["mkpart", "primary", "ext4", "512MiB", "100%"])
@@ -46,7 +51,9 @@ pub fn drives_part(primdrive: &String, debug: bool) {
     info!("[ OK ] - Root Partition erstellt");
 
     if !debug {
-        let mkfs_efi = Command::new("mkfs.fat")
+        let mkfs_efi = Command::new("ssh")
+            .arg(&ssh_string)
+            .arg("mkfs.fat")
             .arg(&efi_partition)
             .args(["-F", "32"])
             .output()
@@ -60,7 +67,9 @@ pub fn drives_part(primdrive: &String, debug: bool) {
     info!("[ OK ] - Efi Partition formatiert");
 
     if !debug {
-        let mkfs_root = Command::new("mkfs.ext4")
+        let mkfs_root = Command::new("ssh")
+            .arg(&ssh_string)
+            .arg("mkfs.ext4")
             .arg(&root_partition)
             .output()
             .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); process::exit(1); });
