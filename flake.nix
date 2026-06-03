@@ -120,7 +120,7 @@
           pkgs.pkg-config
         ];
       };
-      warp = naerskLib.buildPackage {
+      warper = naerskLib.buildPackage {
         src = ./nix-warp/.;
         buildInputs = [
           pkgs.pkg-config
