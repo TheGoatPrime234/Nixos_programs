@@ -69,7 +69,7 @@
         ];
         env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
-      warp = pkgs.mkShell {
+      warper = pkgs.mkShell {
         buildInputs = with pkgs; [
           cargo
           rustc
