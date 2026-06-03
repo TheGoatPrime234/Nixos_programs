@@ -43,6 +43,8 @@ pub enum Commands {
     RemoteInstall {
         #[arg(long = "automate", short = 'a')]
         automate: bool,
+        #[arg(long = "fast", short = 'f')]
+        fast: bool,
     },
 }
 
@@ -73,19 +75,21 @@ pub fn main() {
         Commands::Debug { option } => {
             list_debug(&option);
         },
-        Commands::RemoteInstall { automate } => {
-            remote_install(&automate);
+        Commands::RemoteInstall { automate, fast } => {
+            remote_install(&automate, &fast);
         },
     }
 }
 
-pub fn remote_install(automate: &bool) {
+pub fn remote_install(automate: &bool, fast: &bool) {
     let target_ip = select_host(get_taildevices());
     ssh_ping(&target_ip);
     get_ssh_hardware(&target_ip);
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
-    //nix_check();
+    if *fast {
+        nix_check();
+    };
     let primdrive = select_drive(&target_ip, *automate);
     drives_part(&primdrive, true, &target_ip);
     drives_mount(&primdrive, &target_ip);
