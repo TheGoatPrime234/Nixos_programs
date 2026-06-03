@@ -69,7 +69,7 @@
         ];
         env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
-      warp = pkgs.mkShell {
+      warper = pkgs.mkShell {
         buildInputs = with pkgs; [
           cargo
           rustc
@@ -121,7 +121,7 @@
         ];
       };
       warp = naerskLib.buildPackage {
-        src = ./nix-warp/.;
+        src = ./nix-warper/.;
         buildInputs = [
           pkgs.pkg-config
         ];
