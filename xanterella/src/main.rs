@@ -3,7 +3,6 @@ mod files;
 mod generator;
 mod get;
 mod git;
-mod nix;
 mod list;
 mod select;
 mod drives;
@@ -86,9 +85,11 @@ pub fn remote_install(automate: &bool) {
     get_ssh_hardware(&target_ip);
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
-    nix_check();
-    drives_part(&select_drive(&target_ip, *automate), true, &target_ip);
-    //nix_install(&target_ip);
+    //nix_check();
+    let primdrive = select_drive(&target_ip, *automate);
+    drives_part(&primdrive, true, &target_ip);
+    drives_mount(&primdrive, &target_ip);
+    build_and_deploy(&target_ip);
     // -----------------------------------------------------
     files_crylia_finish();
     git_full(String::from("Xanterella Remote-Install cleanup"));
