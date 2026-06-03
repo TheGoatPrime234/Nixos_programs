@@ -10,18 +10,14 @@ mod drives;
 
 use check::*;
 use files::*;
-use generator::*;
 use get::*;
 use git::*;
-use nix::*;
 use list::*;
 use select::*;
 use drives::*;
 
-use std::process::{self, Command};
-use std::collections::HashMap;
-use clap::{Parser, Subcommand, ValueEnum};
-use log::{debug, info, error};
+use std::process::Command;
+use clap::{Parser, Subcommand};
 use inquire::Select;
 
 #[derive(Parser)]

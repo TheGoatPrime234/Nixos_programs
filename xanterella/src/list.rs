@@ -1,6 +1,4 @@
 use clap::{ValueEnum};
-use log::{debug, info, error};
-use std::process::{self, Command};
 
 use crate::*;
 

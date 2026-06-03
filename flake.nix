@@ -69,6 +69,19 @@
         ];
         env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
+      warper = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          cargo
+          rustc
+          rustfmt
+          clippy
+          rust-analyzer
+        ];
+        nativeBuildInputs = [
+          pkgs.pkg-config
+        ];
+        env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+      };
     };
     packages."x86_64-linux" = {
       parser = naerskLib.buildPackage {
@@ -100,6 +113,15 @@
       };
       xanterella = naerskLib.buildPackage {
         src = ./xanterella/.;
+        buildInputs = [
+          pkgs.pkg-config
+        ];
+        nativeBuildInputs = [
+          pkgs.pkg-config
+        ];
+      };
+      warp = naerskLib.buildPackage {
+        src = ./nix-warper/.;
         buildInputs = [
           pkgs.pkg-config
         ];

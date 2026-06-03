@@ -1,8 +1,5 @@
-use crate::generator::*;
-
 use std::process::{self, Command};
 use log::{debug, info, error};
-use std::fs;
 use std::collections::HashMap;
 use serde::{Deserialize};
 
@@ -42,10 +39,12 @@ pub fn get_ssh_hardware(ip: &String) -> String {
         .arg(&ssh_command)
         .arg("nixos-generate-config --no-filesystems --show-hardware-config")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte SSH nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte SSH nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !ssh.status.success() {
-        let err = String::from_utf8_lossy(&ssh.stderr);
-        error!("[ FAILED ] - Fehler beim erstellen der Hardware Config: {}", err);
+        error!("[ FAILED ] - Fehler beim erstellen der Hardware Config: {}", String::from_utf8_lossy(&ssh.stderr));
         process::exit(1);
     }
 
@@ -64,10 +63,12 @@ pub fn get_drives(ip: String) -> Drives {
         .arg("lsblk")
         .arg("--json")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !lsblk.status.success() {
-        let err = String::from_utf8_lossy(&lsblk.stderr);
-        error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", err);
+        error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
 
         let ssh_command_cato = format!("cato@{}", ip);
         let lsblk1 = Command::new("ssh")
@@ -75,21 +76,29 @@ pub fn get_drives(ip: String) -> Drives {
             .arg("lsblk")
             .arg("--json")
             .output()
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); process::exit(1); });
+            .unwrap_or_else(|err| { 
+                error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
+                process::exit(1); 
+            });
         if !lsblk1.status.success() {
-            let err = String::from_utf8_lossy(&lsblk1.stderr);
-            error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", err);
+            error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
             process::exit(1);
 
         } else {
             info!("[ OK ] - Drives mit Cato geparsen");
             parsed_drives = serde_json::from_slice::<Drives>(&lsblk1.stdout)
-                .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
+                    process::exit(1); 
+                });
         }
     } else {
         info!("[ OK ] - Drives mit Root geparsen");
         parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); process::exit(1); });
+            .unwrap_or_else(|err| { 
+                error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
+                process::exit(1); 
+            });
     }
     info!("[ OK ] - Drives erfasst");
     info!("[ OK ] - Drives geparset");
@@ -102,14 +111,23 @@ pub fn get_taildevices() -> Taildevices {
         .arg("status")
         .arg("--json")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte 'tailscale status --json' nicht ausführen: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte 'tailscale status --json' nicht ausführen: {}", err); 
+            process::exit(1); 
+        });
     if !tail_status.status.success() {
-        let err = String::from_utf8_lossy(&tail_status.stderr);
-        error!("[ FAILED ] - Tailscale Status ist Fehlgeschlagen, bist du eingelogt, wurde das JSON nicht richtig geparst: {}", err);
+        error!("[ FAILED ] - Tailscale Status ist Fehlgeschlagen, bist du eingelogt, wurde das JSON nicht richtig geparst: {}", String::from_utf8_lossy(&tail_status.stderr));
         process::exit(1);
     }
 
     info!("[ OK ] - Fetched Tailscale Devices");
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); process::exit(1); })
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); 
+            process::exit(1); 
+        })
+}
+
+pub fn get_sshstring(ip: &String) -> String {
+    format!("root@{}", ip)
 }

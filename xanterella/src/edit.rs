@@ -24,5 +24,8 @@ pub fn edit_pars_files() -> Vec<String> {
 pub fn edit_add_host(name: String, _ip: String) {
     let file_path = format!("{}/hosts/{}/configuration.nix", gen_path(Paths::Nixconf), name);
     fs::write(&file_path, &content)
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte die Configdatei nicht schreiben: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte die Configdatei nicht schreiben: {}", err); 
+            process::exit(1); 
+        });
 }
