@@ -1,19 +1,20 @@
-use crate::generator::*;
-
 use std::process::{self, Command};
 use log::{debug, info, error};
-use std::fs;
 use std::collections::HashMap;
+use serde::{Deserialize};
 
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Drives {
-    pub medium: HashMap<String, Partition>,
+    pub blockdevices: Vec<BlockDevice>,
 }
 
-#[derive(Debug)]
-pub struct Partition {
-    pub partitions: String,
+#[derive(Deserialize, Debug)]
+pub struct BlockDevice {
+    pub name: String,
     pub size: String,
+
+    #[serde(rename = "type")]
+    pub device_type: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -28,6 +29,8 @@ pub struct DeviceInfo {
     pub name: String,
     #[serde(rename = "TailscaleIPs")]
     pub ip: Vec<String>,
+    #[serde(rename = "OS")]
+    pub os: String,
 }
 
 pub fn get_ssh_hardware(ip: &String) -> String {
@@ -36,10 +39,12 @@ pub fn get_ssh_hardware(ip: &String) -> String {
         .arg(&ssh_command)
         .arg("nixos-generate-config --no-filesystems --show-hardware-config")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte SSH nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte SSH nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !ssh.status.success() {
-        let err = String::from_utf8_lossy(&ssh.stderr);
-        error!("[ FAILED ] - Fehler beim erstellen der Hardware Config: {}", err);
+        error!("[ FAILED ] - Fehler beim erstellen der Hardware Config: {}", String::from_utf8_lossy(&ssh.stderr));
         process::exit(1);
     }
 
@@ -49,42 +54,55 @@ pub fn get_ssh_hardware(ip: &String) -> String {
     hardware_config
 }
 
-pub fn get_drives() -> Drives {
-    let mut drives = Drives {
-        medium: HashMap::new(),
-    };
+pub fn get_drives(ip: String) -> Drives {
+    let parsed_drives;
 
-    let fdisk = Command::new("sudo")
-        .arg("fdisk")
-        .arg("-l")
+    let ssh_command_root = format!("root@{}", ip);
+    let lsblk = Command::new("ssh")
+        .arg(&ssh_command_root)
+        .arg("lsblk")
+        .arg("--json")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte fdisk nicht starten: {}", err); process::exit(1); });
-    if !fdisk.status.success() {
-        let err = String::from_utf8_lossy(&fdisk.stderr);
-        error!("[ FAILED ] - Fehler beim Auslesen der Partitionen: {}", err);
-        process::exit(1);
-    }
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
+            process::exit(1); 
+        });
+    if !lsblk.status.success() {
+        error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
 
-    let output = String::from_utf8_lossy(&fdisk.stdout);
-    debug!("fdisk output: \n{}", output);
-    for i in output.lines() {
-        if !i.starts_with("Disk /dev/") {
-            continue;
+        let ssh_command_cato = format!("cato@{}", ip);
+        let lsblk1 = Command::new("ssh")
+            .arg(&ssh_command_cato)
+            .arg("lsblk")
+            .arg("--json")
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !lsblk1.status.success() {
+            error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
+            process::exit(1);
+
+        } else {
+            info!("[ OK ] - Drives mit Cato geparsen");
+            parsed_drives = serde_json::from_slice::<Drives>(&lsblk1.stdout)
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
+                    process::exit(1); 
+                });
         }
-        debug!("gefundende Zeilen: {}", i);
-        if let Some((links, rechts)) = i.split_once(", ") {
-            let name = links.replace("Disk /dev/", "");
-            if let Some((groesse, _rest)) = rechts.split_once(", ") {
-                let partition = Partition {
-                    partitions: String::from("TBD"),
-                    size: groesse.to_string(),
-                };
-                drives.medium.insert(name, partition);
-            }
-        }
+    } else {
+        info!("[ OK ] - Drives mit Root geparsen");
+        parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
+            .unwrap_or_else(|err| { 
+                error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
+                process::exit(1); 
+            });
     }
-    debug!("Erkannte drives: \n{:?}", drives);
-    drives
+    info!("[ OK ] - Drives erfasst");
+    info!("[ OK ] - Drives geparset");
+    parsed_drives
 }
 
 pub fn get_taildevices() -> Taildevices {
@@ -93,15 +111,23 @@ pub fn get_taildevices() -> Taildevices {
         .arg("status")
         .arg("--json")
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte 'tailscale status --json' nicht ausführen: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte 'tailscale status --json' nicht ausführen: {}", err); 
+            process::exit(1); 
+        });
     if !tail_status.status.success() {
-        let err = String::from_utf8_lossy(&tail_status.stderr);
-        error!("[ FAILED ] - Tailscale Status ist Fehlgeschlagen, bist du eingelogt, wurde das JSON nicht richtig geparst: {}", err);
+        error!("[ FAILED ] - Tailscale Status ist Fehlgeschlagen, bist du eingelogt, wurde das JSON nicht richtig geparst: {}", String::from_utf8_lossy(&tail_status.stderr));
         process::exit(1);
     }
 
     info!("[ OK ] - Fetched Tailscale Devices");
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); process::exit(1); })
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); 
+            process::exit(1); 
+        })
 }
 
+pub fn get_sshstring(ip: &String) -> String {
+    format!("root@{}", ip)
+}

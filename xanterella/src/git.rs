@@ -14,10 +14,12 @@ pub fn git_full(cm_msg: String) {
         .args(["diff", "--stat"])
         .current_dir(gen_path(Paths::Nixconf))
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !diff.status.success() {
-        let err = String::from_utf8_lossy(&diff.stderr);
-        error!("[ FAILED ] - Git diff hat nicht funktioniert: {}", err);
+        error!("[ FAILED ] - Git diff hat nicht funktioniert: {}", String::from_utf8_lossy(&diff.stderr));
         process::exit(1);
     }
 
@@ -27,10 +29,12 @@ pub fn git_full(cm_msg: String) {
         .args(["add", "-A"])
         .current_dir(gen_path(Paths::Nixconf))
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !add.status.success() {
-        let err = String::from_utf8_lossy(&add.stderr);
-        error!("[ FAILED ] - Git add hat nicht funktioniert: {}", err);
+        error!("[ FAILED ] - Git add hat nicht funktioniert: {}", String::from_utf8_lossy(&add.stderr));
         process::exit(1);
     }
 
@@ -40,10 +44,12 @@ pub fn git_full(cm_msg: String) {
         .args(["commit", "-am", &cm_msg])
         .current_dir(gen_path(Paths::Nixconf))
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !commit.status.success() {
-        let err = String::from_utf8_lossy(&commit.stderr);
-        error!("[ FAILED ] - Git commit hat nicht funktioniert: {}", err);
+        error!("[ FAILED ] - Git commit hat nicht funktioniert: {}", String::from_utf8_lossy(&commit.stderr));
         process::exit(1);
     }
 
@@ -58,7 +64,10 @@ pub fn git_checkout(branch: Branches) {
                 .arg("xanterella")
                 .current_dir(gen_path(Paths::Nixconf))
                 .output()
-                .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+                    process::exit(1); 
+                });
             if !checkout.status.success() {
                 error!("[ FAILED ] - Konnte die Branch nicht wechseln");
                 info!("[ OK ] - Branch wird erstellt");
@@ -67,10 +76,12 @@ pub fn git_checkout(branch: Branches) {
                     .args(["checkout", "-b", "xanterella"])
                     .current_dir(gen_path(Paths::Nixconf))
                     .output()
-                    .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+                    .unwrap_or_else(|err| { 
+                        error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+                        process::exit(1); 
+                    });
                 if !create.status.success() {
-                    let err = String::from_utf8_lossy(&create.stderr);
-                    error!("[ FAILED ] - Fehler beim erstellen der Branch: Xanterella: {}", err);
+                    error!("[ FAILED ] - Fehler beim erstellen der Branch: Xanterella: {}", String::from_utf8_lossy(&create.stderr));
                     process::exit(1);
                 }
 
@@ -83,7 +94,10 @@ pub fn git_checkout(branch: Branches) {
                 .arg("main")
                 .current_dir(gen_path(Paths::Nixconf))
                 .output()
-                .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+                    process::exit(1); 
+                });
             if !checkout.status.success() {
                 error!("[ FAILED ] - Konnte die Branch nicht wechseln");
                 info!("[ OK ] - Branch wird erstellt");
@@ -92,10 +106,12 @@ pub fn git_checkout(branch: Branches) {
                     .args(["checkout", "-b", "main"])
                     .current_dir(gen_path(Paths::Nixconf))
                     .output()
-                    .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+                    .unwrap_or_else(|err| { 
+                        error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+                        process::exit(1); 
+                    });
                 if !create.status.success() {
-                    let err = String::from_utf8_lossy(&create.stderr);
-                    error!("[ FAILED ] - Fehler beim erstellen der Branch: Main: {}", err);
+                    error!("[ FAILED ] - Fehler beim erstellen der Branch: Main: {}", String::from_utf8_lossy(&create.stderr));
                     process::exit(1);
                 }
 
@@ -124,10 +140,12 @@ pub fn git_auto_pr(added_host: String) {
         .arg("--no-maintainer-edit")
         .current_dir(gen_path(Paths::Nixconf))
         .output()
-        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte Git nicht starten: {}", err); process::exit(1); });
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
+            process::exit(1); 
+        });
     if !pr.status.success() {
-        let err = String::from_utf8_lossy(&pr.stderr);
-        error!("[ FAILED ] - Fehler beim erstellen der PR: {}", err);
+        error!("[ FAILED ] - Fehler beim erstellen der PR: {}", String::from_utf8_lossy(&pr.stderr));
         process::exit(1);
     }
 
