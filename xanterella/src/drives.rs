@@ -178,6 +178,7 @@ pub fn build_and_deploy(ip: &String) {
         .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
         .args([
             "copy", 
+            "--no-check-sigs",
             "--substitute-on-destination", 
             "--to", 
             &format!("ssh-ng://root@{}?remote-store=local%3Froot%3D/mnt", ip), 
@@ -212,7 +213,22 @@ pub fn build_and_deploy(ip: &String) {
         process::exit(1);
     }
 
-    let activate_cmd = "nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
+    info!("[ OK ] - Bereite Dateisystem für nixos-enter vor...");
+    
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
+    let prep = Command::new("ssh")
+        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(format!("root@{}", ip))
+        .arg(prep_cmd)
+        .output()
+        .unwrap_or_else(|err| { error!("SSH Fehler bei der Vorbereitung: {}", err); process::exit(1); });
+
+    if !prep.status.success() {
+        error!("[ FAILED ] - Vorbereitung fehlgeschlagen: {}", String::from_utf8_lossy(&prep.stderr));
+        process::exit(1);
+    }
+
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     let activate = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(format!("root@{}", ip))
@@ -225,7 +241,7 @@ pub fn build_and_deploy(ip: &String) {
         process::exit(1);
     }
 
-    let bootloader_cmd = "nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
+    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
     let bootloader = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(format!("root@{}", ip))
@@ -237,6 +253,8 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Bootloader Installation fehlgeschlagen: {}", String::from_utf8_lossy(&bootloader.stderr));
         process::exit(1);
     }
+
+    info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
 
     info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
 }

@@ -10,7 +10,7 @@ mod drives;
 use check::*;
 use files::*;
 use get::*;
-use git::*;
+use git::git_full;
 use list::*;
 use select::*;
 use drives::*;
@@ -87,7 +87,7 @@ pub fn remote_install(automate: &bool, fast: &bool) {
     get_ssh_hardware(&target_ip);
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
-    if *fast {
+    if !*fast {
         nix_check();
     };
     let primdrive = select_drive(&target_ip, *automate);
