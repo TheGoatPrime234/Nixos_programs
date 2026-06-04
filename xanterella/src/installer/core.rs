@@ -9,7 +9,6 @@ use crate::utils::select::*;
 pub fn remote_install(automate: &bool, fast: &bool) {
     let target_ip = select_host(get_taildevices());
     ssh_ping(&target_ip);
-    get_hardware(&target_ip);
     files_crylia_start(get_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
     if !*fast {
