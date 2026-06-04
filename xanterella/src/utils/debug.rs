@@ -1,7 +1,7 @@
 use clap::{ValueEnum};
 
 use crate::installer::get::*;
-use crate::installer::install::drives_part;
+use crate::installer::drives::drives_part;
 use crate::utils::select::*;
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -32,7 +32,7 @@ pub fn list_debug(function: &ListDebug) {
         },
         ListDebug::Hardware => {
             let target_ip = select_host(get_taildevices());
-            println!("{}", get_ssh_hardware(&target_ip));
+            println!("{}", get_hardware(&target_ip));
         },
     }
 }

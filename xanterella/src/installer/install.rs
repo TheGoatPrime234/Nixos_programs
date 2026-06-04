@@ -4,151 +4,8 @@ use std::fs;
 
 use crate::installer::get::*;
 
-pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
-    info!("[ OK ] - Starte formatierung und partitionierung");
-    let drive = format!("/dev/{}", primdrive);
-    
-    if !debug {
-        let parted_efi = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("parted")
-            .arg("-s")
-            .arg(&drive)
-            .args(["mklabel", "gpt"])
-            .args(["mkpart", "ESP", "fat32", "1Mib", "512MiB"])
-            .args(["set", "1", "esp", "on"])
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte 'parted' nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !parted_efi.status.success() {
-            error!("[ FAILED ] - Konnte das Drive nicht partitionieren: {}", String::from_utf8_lossy(&parted_efi.stderr));
-            process::exit(1);
-        }
-    };
-    info!("[ OK ] - Efi Partition erstellt");
-
-    if !debug {
-        let parted_root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("parted")
-            .arg("-s")
-            .arg(&drive)
-            .args(["mkpart", "primary", "ext4", "512MiB", "100%"])
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte parted nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !parted_root.status.success() {
-            error!("[ FAILED ] - Konnte das Drive nicht partitionieren: {}", String::from_utf8_lossy(&parted_root.stderr));
-            process::exit(1);
-        }
-    };
-    info!("[ OK ] - Root Partition erstellt");
-
-    if !debug {
-        let mkfs_efi = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mkfs.fat")
-            .arg(get_drives_name(&primdrive, 1))
-            .args(["-F", "32"])
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !mkfs_efi.status.success() {
-            error!("[ FAILED ] - Konnte die Partition nicht formatieren: {}", String::from_utf8_lossy(&mkfs_efi.stderr));
-            process::exit(1);
-        }
-    };
-    info!("[ OK ] - Efi Partition formatiert");
-
-    if !debug {
-        let mkfs_root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mkfs.ext4")
-            .arg(get_drives_name(&primdrive, 2))
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !mkfs_root.status.success() {
-            error!("[ FAILED ] - Konnte die Partition nicht formatieren: {}", String::from_utf8_lossy(&mkfs_root.stderr));
-            process::exit(1);
-        }
-    };
-    info!("[ OK ] - Ext4 Partition formatiert");
-
-    info!("[ OK ] - Formatierungs & Partitionierungs Prozess erfolgreich");
-}
-
-pub fn drives_mount(primdrive: &String, ip: &String) {
-
-        let root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mount")
-            .arg(get_drives_name(&primdrive, 2))
-            .arg("/mnt")
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte mount nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !root.status.success() {
-            error!("[ FAILED ] - Konnte die Root Partition nicht mounten: {}", String::from_utf8_lossy(&root.stderr));
-            process::exit(1);
-        }
-        info!("[ OK ] - Root Partition gemounted");
-
-        let dir = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mkdir")
-            .arg("-p")
-            .arg("/mnt/boot")
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte mkdir nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !dir.status.success() {
-            error!("[ FAILED ] - Konnte die den Boot Ordner nicht erstellen: {}", String::from_utf8_lossy(&dir.stderr));
-            process::exit(1);
-        }
-
-        let boot = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mount")
-            .arg(get_drives_name(&primdrive, 1))
-            .arg("/mnt/boot")
-            .output()
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
-        if !boot.status.success() {
-            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", String::from_utf8_lossy(&boot.stderr));
-            process::exit(1);
-        }
-        info!("[ OK ] - Boot Partition gemounted");
-
-        info!("[ OK ] - Mount Prozess erfolgreich");
-}
-
-pub fn build_and_deploy(ip: &String) {
-    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
-    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
-    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
-    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
-        .unwrap_or_else(|err| { 
-            error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
-            process::exit(1); 
-        })
-        .to_string_lossy()
-        .into_owned();
-    debug!("System-Pfad im Nix-Store: {}", system_path);
-    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
-    info!("[ OK ] - Starte Build and Deployment");
+pub fn build() {
+    info!("[ RUN ] - Starte loken Build");
     
     let build = Command::new("nix")
         .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
@@ -163,8 +20,26 @@ pub fn build_and_deploy(ip: &String) {
         process::exit(1);
     }
 
-    info!("[ OK ] - Kopiere System-Closure auf Zielgerät");
-    
+    info!("[ OK ] - Build erfolgreich");
+}
+
+pub fn deploy(ip: &String) {
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
+    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
+    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
+        .unwrap_or_else(|err| { 
+            error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
+            process::exit(1); 
+        })
+        .to_string_lossy()
+        .into_owned();
+    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
+    debug!("System-Pfad im Nix-Store: {}", system_path);
+
+    info!("[ RUN ] - Starte Deployment");
+    info!("[ RUN ] - Starte Copy des Closure");
+
     let copy = Command::new("nix")
         .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
         .args([
@@ -186,10 +61,11 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
         process::exit(1);
     }
+    info!("[ OK ] - Closure Copy erfolgreich");
 
-    info!("[ OK ] - Starte die Installation auf dem Zielgerät");
-    info!("[ OK ] - Registriere System-Profil und installiere Bootloader");
+    info!("[ RUN ] - Starte die Installation auf dem Zielgerät");
 
+    info!("[ RUN ] - Aktivierung des Profiles");
     let profile = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -200,9 +76,9 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Profil-Registrierung fehlgeschlagen: {}", String::from_utf8_lossy(&profile.stderr));
         process::exit(1);
     }
+    info!("[ OK ] - Aktivierung des Profiles erfolgreich");
 
-    info!("[ OK ] - Bereite Dateisystem für nixos-enter vor...");
-    
+    info!("[ RUN ] - Bereite Dateisystem für nixos-enter vor");
     let prep = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(get_sshstring(ip))
@@ -214,7 +90,9 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Vorbereitung fehlgeschlagen: {}", String::from_utf8_lossy(&prep.stderr));
         process::exit(1);
     }
+    info!("[ OK ] - Vorbereitung erfolgreich");
 
+    info!("[ RUN ] - Aktiviere das System");
     let activate = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -225,7 +103,9 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Systemaktivierung fehlgeschlagen: {}", String::from_utf8_lossy(&activate.stderr));
         process::exit(1);
     }
+    info!("[ OK ] - Aktivierung des Systems erfolgreich");
 
+    info!("[ RUN ] - Aktualisiere Bootloader");
     let bootloader = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -236,22 +116,22 @@ pub fn build_and_deploy(ip: &String) {
         error!("[ FAILED ] - Bootloader Installation fehlgeschlagen: {}", String::from_utf8_lossy(&bootloader.stderr));
         process::exit(1);
     }
+    info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
 
     info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
-    info!("[ OK ] - System wird neugestartet");
+}
+
+pub fn reboot(ip: &String) {
+    info!("[ RUN ] - System wird neugestartet");
 
     let reboot = Command::new("ssh")
         .arg(get_sshstring(ip))
         .arg("reboot")
-        .output()
+        .spawn()
         .unwrap_or_else(|err| { 
             error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
             process::exit(1); 
         });
-    if !reboot.status.success() {
-        error!("[ FAILED ] - Reboot fehlgeschlagen: {}", String::from_utf8_lossy(&reboot.stderr));
-        process::exit(1);
-    }
 
     info!("System neugestartet");
 }

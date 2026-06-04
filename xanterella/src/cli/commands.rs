@@ -2,11 +2,9 @@ use std::process::Command;
 use clap::{Parser, Subcommand};
 
 use crate::utils::check::ssh_ping;
-use crate::utils::git::git_full;
 use crate::utils::debug::{list_debug, ListDebug};
 
-use crate::installer::core::remote_install;
-use crate::installer::file::files_crylia_finish;
+use crate::installer::core::*;
 
 #[derive(Parser)]
 #[command(name = "Xanterella")]
@@ -58,8 +56,7 @@ pub fn cli_parse() {
             ssh_ping(ip);
         },
         Commands::Clean => {
-            files_crylia_finish();
-            git_full(String::from("Xanterella Remote-Install cleanup"));
+            clean();
         },
         Commands::Debug { option } => {
             list_debug(&option);

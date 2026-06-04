@@ -39,8 +39,7 @@ pub enum Paths {
     Nixconf,
 }
 
-
-pub fn get_ssh_hardware(ip: &String) -> String {
+pub fn get_hardware(ip: &String) -> String {
     let ssh_command = format!("root@{}", ip);
     let ssh = Command::new("ssh")
         .arg(&ssh_command)
