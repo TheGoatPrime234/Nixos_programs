@@ -1,7 +1,9 @@
 use std::process::{self, Command};
-use log::{info, error};
+use log::{info, error, debug};
+use std::fs;
 
-use crate::*;
+use crate::generator::*;
+use crate::get::*;
 
 pub fn drives_name(primdrive: &String, number: i8) -> String {
     let drive = format!("/dev/{}", primdrive);
@@ -97,26 +99,12 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Formatierungs & Partitionierungs Prozess erfolgreich");
 }
 
-pub fn drives_mount(primdrive: String, ip: String) {
-
-        let boot = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mount")
-            .arg(drives_name(&primdrive, 1))
-            .arg("/mnt/boot")
-            .arg("-p")
-            .output()
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
-        if !boot.status.success() {
-            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", String::from_utf8_lossy(&boot.stderr));
-            process::exit(1);
-        }
-        info!("[ OK ] - Boot Partition gemounted");
+pub fn drives_mount(primdrive: &String, ip: &String) {
 
         let root = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("mount")
-            .arg(drives_name(&primdrive, 1))
+            .arg(drives_name(&primdrive, 2))
             .arg("/mnt")
             .output()
             .unwrap_or_else(|err| { 
@@ -128,6 +116,34 @@ pub fn drives_mount(primdrive: String, ip: String) {
             process::exit(1);
         }
         info!("[ OK ] - Root Partition gemounted");
+
+        let dir = Command::new("ssh")
+            .arg(get_sshstring(&ip))
+            .arg("mkdir")
+            .arg("-p")
+            .arg("/mnt/boot")
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("[ FAILED ] - Konnte mkdir nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !dir.status.success() {
+            error!("[ FAILED ] - Konnte die den Boot Ordner nicht erstellen: {}", String::from_utf8_lossy(&dir.stderr));
+            process::exit(1);
+        }
+
+        let boot = Command::new("ssh")
+            .arg(get_sshstring(&ip))
+            .arg("mount")
+            .arg(drives_name(&primdrive, 1))
+            .arg("/mnt/boot")
+            .output()
+            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
+        if !boot.status.success() {
+            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", String::from_utf8_lossy(&boot.stderr));
+            process::exit(1);
+        }
+        info!("[ OK ] - Boot Partition gemounted");
 
         info!("[ OK ] - Mount Prozess erfolgreich");
 }
@@ -148,46 +164,97 @@ pub fn build_and_deploy(ip: &String) {
         process::exit(1);
     }
 
-    let system_path = fs::read_link(format!("{}/result", gen_path(Paths::Nixconf))
+    let system_path = fs::read_link(format!("{}/result", gen_path(Paths::Nixconf)))
         .unwrap_or_else(|err| { 
             error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
             process::exit(1); 
         })
         .to_string_lossy()
         .into_owned();
-    debug!("System-Pfad im Nix-Store lautet: {}", system_path);
+    debug!("System-Pfad im Nix-Store: {}", system_path);
     info!("[ OK ] - Kopiere System-Closure auf Zielgerät");
-    env::set_var("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null");
     
     let copy = Command::new("nix")
-        .args(["copy", "--to", &format!("ssh://root@{}", ip), "./result"])
-        .current_dir(&flake_dir)
+        .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
+        .args([
+            "copy", 
+            "--no-check-sigs",
+            "--substitute-on-destination", 
+            "--to", 
+            &format!("ssh-ng://root@{}?remote-store=local%3Froot%3D/mnt", ip), 
+            "./result"
+        ])
+        .current_dir(gen_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("Konnte nix copy nicht starten: {}", err); 
             process::exit(1); 
         });
+
     if !copy.status.success() {
-        error!("[ FAILED ] - Kopieren fehlgeschlagen: {}", String::from_utf8_lossy(&copy.stderr));
+        let err = String::from_utf8_lossy(&copy.stderr);
+        error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
         process::exit(1);
     }
 
-    info!("[ OK ] - Starte die Installation auf dem Zielgerät...");
-    let install_cmd = format!("nixos-install --system {} --root /mnt --no-root-passwd", system_path);
-    
-    let install = Command::new("ssh")
+    info!("[ OK ] - Starte die Installation auf dem Zielgerät");
+    info!("[ OK ] - Registriere System-Profil und installiere Bootloader");
+
+    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
+    let profile = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(format!("root@{}", ip))
-        .arg(&install_cmd)
+        .arg(&profile_cmd)
         .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte SSH nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !install.status.success() {
-        error!("[ FAILED ] - nixos-install fehlgeschlagen: {}", String::from_utf8_lossy(&install.stderr));
+        .unwrap_or_else(|err| { error!("SSH Fehler beim Profil setzen: {}", err); process::exit(1); });
+
+    if !profile.status.success() {
+        error!("[ FAILED ] - Profil-Registrierung fehlgeschlagen: {}", String::from_utf8_lossy(&profile.stderr));
         process::exit(1);
     }
 
-    info!("[ OK ] - Installation erfolgreich abgeschlossen!");
+    info!("[ OK ] - Bereite Dateisystem für nixos-enter vor...");
+    
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
+    let prep = Command::new("ssh")
+        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(format!("root@{}", ip))
+        .arg(prep_cmd)
+        .output()
+        .unwrap_or_else(|err| { error!("SSH Fehler bei der Vorbereitung: {}", err); process::exit(1); });
+
+    if !prep.status.success() {
+        error!("[ FAILED ] - Vorbereitung fehlgeschlagen: {}", String::from_utf8_lossy(&prep.stderr));
+        process::exit(1);
+    }
+
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
+    let activate = Command::new("ssh")
+        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(format!("root@{}", ip))
+        .arg(activate_cmd)
+        .output()
+        .unwrap_or_else(|err| { error!("SSH Fehler bei der Aktivierung: {}", err); process::exit(1); });
+
+    if !activate.status.success() {
+        error!("[ FAILED ] - Systemaktivierung fehlgeschlagen: {}", String::from_utf8_lossy(&activate.stderr));
+        process::exit(1);
+    }
+
+    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
+    let bootloader = Command::new("ssh")
+        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(format!("root@{}", ip))
+        .arg(bootloader_cmd)
+        .output()
+        .unwrap_or_else(|err| { error!("SSH Fehler beim Bootloader: {}", err); process::exit(1); });
+
+    if !bootloader.status.success() {
+        error!("[ FAILED ] - Bootloader Installation fehlgeschlagen: {}", String::from_utf8_lossy(&bootloader.stderr));
+        process::exit(1);
+    }
+
+    info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
+
+    info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
 }

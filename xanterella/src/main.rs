@@ -3,7 +3,6 @@ mod files;
 mod generator;
 mod get;
 mod git;
-mod nix;
 mod list;
 mod select;
 mod drives;
@@ -11,7 +10,7 @@ mod drives;
 use check::*;
 use files::*;
 use get::*;
-use git::*;
+use git::git_full;
 use list::*;
 use select::*;
 use drives::*;
@@ -44,6 +43,8 @@ pub enum Commands {
     RemoteInstall {
         #[arg(long = "automate", short = 'a')]
         automate: bool,
+        #[arg(long = "fast", short = 'f')]
+        fast: bool,
     },
 }
 
@@ -74,21 +75,25 @@ pub fn main() {
         Commands::Debug { option } => {
             list_debug(&option);
         },
-        Commands::RemoteInstall { automate } => {
-            remote_install(&automate);
+        Commands::RemoteInstall { automate, fast } => {
+            remote_install(&automate, &fast);
         },
     }
 }
 
-pub fn remote_install(automate: &bool) {
+pub fn remote_install(automate: &bool, fast: &bool) {
     let target_ip = select_host(get_taildevices());
     ssh_ping(&target_ip);
     get_ssh_hardware(&target_ip);
     files_crylia_start(get_ssh_hardware(&target_ip));
     git_full(String::from("Xanterella Remote-Install"));
-    nix_check();
-    drives_part(&select_drive(&target_ip, *automate), true, &target_ip);
-    //nix_install(&target_ip);
+    if !*fast {
+        nix_check();
+    };
+    let primdrive = select_drive(&target_ip, *automate);
+    drives_part(&primdrive, true, &target_ip);
+    drives_mount(&primdrive, &target_ip);
+    build_and_deploy(&target_ip);
     // -----------------------------------------------------
     files_crylia_finish();
     git_full(String::from("Xanterella Remote-Install cleanup"));

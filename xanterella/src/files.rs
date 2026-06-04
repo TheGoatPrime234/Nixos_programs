@@ -5,8 +5,8 @@ use std::fs;
 use crate::generator::*;
 
 pub fn files_crylia_start(config: String) {
-    let file_path1 = "/home/cato/nixos-config/hosts/crylia/configuration.nix";
-    let file_path2 = "/home/cato/nixos-config/hosts/crylia/hardware-configuration.nix";
+    let file_path1 = "/home/cato/xanterella/hosts/crylia/configuration.nix";
+    let file_path2 = "/home/cato/xanterella/hosts/crylia/hardware-configuration.nix";
     fs::write(&file_path2, &config)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Hardware Config nicht schreiben: {}", err); 
@@ -39,8 +39,8 @@ pub fn files_crylia_start(config: String) {
 }
 
 pub fn files_crylia_finish() {
-    let file_path1 = "/home/cato/nixos-config/hosts/crylia/configuration.nix";
-    let file_path2 = "/home/cato/nixos-config/hosts/crylia/hardware-configuration.nix";
+    let file_path1 = "/home/cato/xanterella/hosts/crylia/configuration.nix";
+    let file_path2 = "/home/cato/xanterella/hosts/crylia/hardware-configuration.nix";
     let content = fs::read_to_string(file_path1)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Config von Crylia nicht auslesen: {}", err); 
