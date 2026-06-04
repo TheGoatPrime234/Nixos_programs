@@ -1,7 +1,7 @@
 use std::process::{self, Command};
 use log::{info, error};
 
-use crate::generator::*;
+use crate::installer::get::*;
 
 pub fn ssh_ping(ip: &String) {
     let ping = Command::new("ping")
@@ -40,7 +40,7 @@ pub fn nix_check() {
         .arg("dry-build")
         .arg("--flake")
         .arg(".#crylia")
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Nixos-rebuild nicht starten: {}", err); 
@@ -53,4 +53,3 @@ pub fn nix_check() {
         process::exit(1);
     }
 }
-

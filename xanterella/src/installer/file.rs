@@ -1,8 +1,9 @@
 use log::{debug, info, error};
+use walkdir::WalkDir;
 use std::process::{self, Command};
 use std::fs;
 
-use crate::generator::*;
+use crate::installer::get::*;
 
 pub fn files_crylia_start(config: String) {
     let file_path1 = "/home/cato/xanterella/hosts/crylia/configuration.nix";
@@ -66,7 +67,7 @@ pub fn files_crylia_finish() {
 pub fn files_alejandra() {
     let alejandra = Command::new("alejandra")
         .arg(".")
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Alejandra nicht starten: {}", err); 
@@ -79,3 +80,30 @@ pub fn files_alejandra() {
     }
     info!("[ OK ] - Dateien wurden mit Alejandra formatiert");
 }
+
+/*
+pub fn edit_pars_files() -> Vec<String> {
+    let files: Vec<String> = WalkDir::new(&get_path(Paths::Nixconf))
+        .sort_by_file_name()
+        .contents_first(true)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().is_file())
+        .filter_map(|entry| {
+            entry.path().to_str().map(|s| s.to_string())
+        })
+        .collect();
+    info!("[ OK ] - Nixos Config Dateien geparst");
+    debug!("{:#?}", files);
+    files
+}
+
+pub fn edit_add_host(name: String, _ip: String) {
+    let file_path = format!("{}/hosts/{}/configuration.nix", get_path(Paths::Nixconf), name);
+    fs::write(&file_path, &content)
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte die Configdatei nicht schreiben: {}", err); 
+            process::exit(1); 
+        });
+}
+*/

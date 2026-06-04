@@ -1,11 +1,14 @@
 use clap::{ValueEnum};
 
-use crate::*;
+use crate::installer::get::*;
+use crate::installer::install::drives_part;
+use crate::utils::select::*;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum ListDebug {
     Drives,
     Taildevices,
+    Select,
     Hardware,
 }
 
@@ -22,6 +25,10 @@ pub fn list_debug(function: &ListDebug) {
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());
+        },
+        ListDebug::Select => {
+            println!("{:?}", get_taildevices());
+            println!("{:?}", get_drives(String::from("127.0.0.1")));
         },
         ListDebug::Hardware => {
             let target_ip = select_host(get_taildevices());
