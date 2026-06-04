@@ -1,7 +1,9 @@
 use std::process::{self, Command};
 use log::{debug, info, error};
-use std::collections::HashMap;
 use serde::{Deserialize};
+use std::collections::HashMap;
+use std::env;
+use std::path::*;
 
 #[derive(Deserialize, Debug)]
 pub struct Drives {
@@ -33,7 +35,11 @@ pub struct DeviceInfo {
     pub os: String,
 }
 
-pub fn get_ssh_hardware(ip: &String) -> String {
+pub enum Paths {
+    Nixconf,
+}
+
+pub fn get_hardware(ip: &String) -> String {
     let ssh_command = format!("root@{}", ip);
     let ssh = Command::new("ssh")
         .arg(&ssh_command)
@@ -75,6 +81,7 @@ pub fn get_drives(ip: String) -> Drives {
             .arg(&ssh_command_cato)
             .arg("lsblk")
             .arg("--json")
+            .args(["-x", "SIZE"])
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
@@ -131,3 +138,24 @@ pub fn get_taildevices() -> Taildevices {
 pub fn get_sshstring(ip: &String) -> String {
     format!("root@{}", ip)
 }
+
+pub fn get_drives_name(primdrive: &String, number: i8) -> String {
+    let drive = format!("/dev/{}", primdrive);
+    let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmclblk") {
+        "p"
+    } else {
+        ""
+    };
+    let partition = format!("{}{}{}", drive, p_suffix, number);
+    partition
+}
+
+pub fn get_path(option: Paths) -> String {
+    let home = env::var("HOME").expect("[ FAILED ] - Konnte die Home Variable nicht extrahieren");
+    let nixconfig = PathBuf::from(&home).join("xanterella");
+    let result: PathBuf = match option {
+        Paths::Nixconf => nixconfig,
+    };
+    result.to_str().expect("[ FAILED ] - Gen Path ist fehlgeschlagen").to_string()
+}
+
