@@ -1,7 +1,8 @@
 use std::process;
 use log::{debug, error};
+use inquire::Select;
 
-use crate::*;
+use crate::installer::get::*;
 
 pub fn select_host(hosts: Taildevices) -> String {
     let mut options: Vec<String> = vec![];

@@ -1,7 +1,7 @@
 use log::{debug, info, error};
 use std::process::{self, Command};
 
-use crate::generator::*;
+use crate::installer::get::*;
 
 pub enum Branches {
     Xanterella,
@@ -12,7 +12,7 @@ pub fn git_full(cm_msg: String) {
 
     let diff = Command::new("git")
         .args(["diff", "--stat"])
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -27,7 +27,7 @@ pub fn git_full(cm_msg: String) {
 
     let add = Command::new("git")
         .args(["add", "-A"])
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -42,7 +42,7 @@ pub fn git_full(cm_msg: String) {
 
     let commit = Command::new("git")
         .args(["commit", "-am", &cm_msg])
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -62,7 +62,7 @@ pub fn git_checkout(branch: Branches) {
             let checkout = Command::new("git")
                 .arg("checkout")
                 .arg("xanterella")
-                .current_dir(gen_path(Paths::Nixconf))
+                .current_dir(get_path(Paths::Nixconf))
                 .output()
                 .unwrap_or_else(|err| { 
                     error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -74,7 +74,7 @@ pub fn git_checkout(branch: Branches) {
 
                 let create = Command::new("git")
                     .args(["checkout", "-b", "xanterella"])
-                    .current_dir(gen_path(Paths::Nixconf))
+                    .current_dir(get_path(Paths::Nixconf))
                     .output()
                     .unwrap_or_else(|err| { 
                         error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -92,7 +92,7 @@ pub fn git_checkout(branch: Branches) {
             let checkout = Command::new("git")
                 .arg("checkout")
                 .arg("main")
-                .current_dir(gen_path(Paths::Nixconf))
+                .current_dir(get_path(Paths::Nixconf))
                 .output()
                 .unwrap_or_else(|err| { 
                     error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -104,7 +104,7 @@ pub fn git_checkout(branch: Branches) {
 
                 let create = Command::new("git")
                     .args(["checkout", "-b", "main"])
-                    .current_dir(gen_path(Paths::Nixconf))
+                    .current_dir(get_path(Paths::Nixconf))
                     .output()
                     .unwrap_or_else(|err| { 
                         error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
@@ -138,7 +138,7 @@ pub fn git_auto_pr(added_host: String) {
         .args(["-t", &title_message])
         .args(["-b", &body_message])
         .arg("--no-maintainer-edit")
-        .current_dir(gen_path(Paths::Nixconf))
+        .current_dir(get_path(Paths::Nixconf))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Git nicht starten: {}", err); 
