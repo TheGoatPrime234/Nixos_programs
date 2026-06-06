@@ -90,10 +90,8 @@ pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
     };
     info!("[ OK ] - ROOT Partition formatiert");
 }
-//    info!("[ OK ] - Formatierungs Prozess erfolgreich");
 
-pub fn drives_mount(primdrive: &String, ip: &String) {
-
+pub fn mount_root(primdrive: &String, ip: &String) {
         let root = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("mount")
@@ -109,7 +107,9 @@ pub fn drives_mount(primdrive: &String, ip: &String) {
             process::exit(1);
         }
         info!("[ OK ] - Root Partition gemounted");
+}
 
+pub fn create_boot_dir(ip: &String) {
         let dir = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("mkdir")
@@ -124,7 +124,9 @@ pub fn drives_mount(primdrive: &String, ip: &String) {
             error!("[ FAILED ] - Konnte die den Boot Ordner nicht erstellen: {}", String::from_utf8_lossy(&dir.stderr));
             process::exit(1);
         }
+}
 
+pub fn mount_boot(primdrive: &String, ip: &String) {
         let boot = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("mount")
@@ -137,6 +139,4 @@ pub fn drives_mount(primdrive: &String, ip: &String) {
             process::exit(1);
         }
         info!("[ OK ] - Boot Partition gemounted");
-
-        info!("[ OK ] - Mount Prozess erfolgreich");
 }

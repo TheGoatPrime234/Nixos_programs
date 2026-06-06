@@ -48,3 +48,14 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     part_efi(&drive, debug, ip);
     part_root(&drive, debug, ip);
 }
+
+pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
+    format_efi(primdrive, debug, ip);
+    format_root(primdrive, debug, ip);
+}
+
+pub fn drives_mount(primdrive: &String, ip: &String) {
+    mount_root(primdrive, ip);
+    create_boot_dir(ip);
+    mount_boot(primdrive, ip);
+}
