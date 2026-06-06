@@ -51,6 +51,9 @@ pub enum Commands {
         #[arg(short = 'e', long = "extended", conflicts_with = "compact")]
         extended: bool,
     },
+    Stats {
+        level: i32,
+    },
 }
 
 #[derive(Serialize)]
@@ -91,6 +94,9 @@ pub fn main() {
         }
         Commands::Statusall { json, readable, compact, extended } => {
             get_status_all(take_input(*json, *readable, *compact, *extended));
+        }
+        Commands::Stats { level } => {
+            time_for_level(*level);
         }
     }
 }
@@ -272,3 +278,12 @@ pub fn get_status_all(format: Format) {
     }
 }
 
+pub fn time_for_level(limit: i32) {
+    let mut overall: f64 = 0.0;
+    for i in 1..limit {
+        let hours = 2.0 * 1.15_f64.powi(i);
+        let seconds: f64 = 3600.0 * hours;
+        overall += seconds;
+        println!("Level: {:<3} - Hours: {:<25} - Overall: {}", i, format_time(seconds as u64), format_time(overall as u64));
+    }
+}
