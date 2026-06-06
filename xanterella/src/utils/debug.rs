@@ -1,9 +1,10 @@
 use clap::{ValueEnum};
 
 use crate::utils::get::*;
+use crate::utils::select::*;
 use crate::installer::drives::drives_part;
 use crate::usb::flash::*;
-use crate::utils::select::*;
+use crate::usb::core::*;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum ListDebug {
@@ -11,6 +12,7 @@ pub enum ListDebug {
     Taildevices,
     Select,
     Iso,
+    Flash,
     Hardware,
 }
 
@@ -34,6 +36,9 @@ pub fn list_debug(function: &ListDebug) {
         },
         ListDebug::Iso => {
             println!("{}", build_iso(&true));
+        },
+        ListDebug::Flash => {
+            flash_usb(FlashMode::local, String::from("127.0.0.1"), true);
         },
         ListDebug::Hardware => {
             let target_ip = select_host(get_taildevices());
