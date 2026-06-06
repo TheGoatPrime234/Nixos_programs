@@ -41,9 +41,8 @@ pub enum Paths {
 }
 
 pub fn get_hardware(ip: &String) -> String {
-    let ssh_command = format!("root@{}", ip);
     let ssh = Command::new("ssh")
-        .arg(&ssh_command)
+        .arg(get_sshstring(ip))
         .arg("nixos-generate-config --no-filesystems --show-hardware-config")
         .output()
         .unwrap_or_else(|err| { 
@@ -64,9 +63,8 @@ pub fn get_hardware(ip: &String) -> String {
 pub fn get_drives(ip: String) -> Drives {
     let parsed_drives;
     if ip != String::from("127.0.0.1") {
-        let ssh_command_root = format!("root@{}", ip);
         let lsblk = Command::new("ssh")
-            .arg(&ssh_command_root)
+            .arg(get_sshstring(&ip))
             .arg("lsblk")
             .arg("--json")
             .output()
