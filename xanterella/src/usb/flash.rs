@@ -1,6 +1,8 @@
-use crate::utils::get::*;
 use log::{info, error};
+
 use std::process::{self, Command};
+
+use crate::utils::get::*;
 
 pub enum FlashMode {
     Local,

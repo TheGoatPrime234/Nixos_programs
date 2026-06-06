@@ -1,9 +1,9 @@
-use std::process::Command;
 use clap::{Parser, Subcommand};
+
+use std::process::Command;
 
 use crate::utils::check::ssh_ping;
 use crate::utils::debug::{list_debug, ListDebug};
-
 use crate::installer::core::*;
 
 #[derive(Parser)]

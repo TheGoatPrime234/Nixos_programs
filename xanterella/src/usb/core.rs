@@ -1,6 +1,7 @@
+use log::info;
+
 use crate::usb::flash::*;
 use crate::utils::select::*;
-use log::info;
 
 pub fn flash_usb(mode: FlashMode, ip: String, debug: bool) {
     info!("[ RUN ] - Start Flashing");
