@@ -2,7 +2,7 @@ use std::process::{self, Command};
 use log::{info, error, debug};
 use std::fs;
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub fn build() {
     info!("[ RUN ] - Starte loken Build");
@@ -29,7 +29,7 @@ pub fn deploy(ip: &String) {
     let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
     let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
         .unwrap_or_else(|err| { 
-            error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
+            error!("[ FAILED ] - Konnte Symlink 'result' nicht auflösen: {}", err); 
             process::exit(1); 
         })
         .to_string_lossy()
@@ -124,7 +124,7 @@ pub fn deploy(ip: &String) {
 pub fn reboot(ip: &String) {
     info!("[ RUN ] - System wird neugestartet");
 
-    let reboot = Command::new("ssh")
+    let _reboot = Command::new("ssh")
         .arg(get_sshstring(ip))
         .arg("reboot")
         .spawn()

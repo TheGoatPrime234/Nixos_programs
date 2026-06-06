@@ -4,6 +4,7 @@ use serde::{Deserialize};
 use std::collections::HashMap;
 use std::env;
 use std::path::*;
+use std::fs;
 
 #[derive(Deserialize, Debug)]
 pub struct Drives {
@@ -62,45 +63,63 @@ pub fn get_hardware(ip: &String) -> String {
 
 pub fn get_drives(ip: String) -> Drives {
     let parsed_drives;
-
-    let ssh_command_root = format!("root@{}", ip);
-    let lsblk = Command::new("ssh")
-        .arg(&ssh_command_root)
-        .arg("lsblk")
-        .arg("--json")
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !lsblk.status.success() {
-        error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
-
-        let ssh_command_cato = format!("cato@{}", ip);
-        let lsblk1 = Command::new("ssh")
-            .arg(&ssh_command_cato)
+    if ip != String::from("127.0.0.1") {
+        let ssh_command_root = format!("root@{}", ip);
+        let lsblk = Command::new("ssh")
+            .arg(&ssh_command_root)
             .arg("lsblk")
             .arg("--json")
-            .args(["-x", "SIZE"])
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
                 process::exit(1); 
             });
-        if !lsblk1.status.success() {
-            error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
-            process::exit(1);
+        if !lsblk.status.success() {
+            error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
 
+            let ssh_command_cato = format!("cato@{}", ip);
+            let lsblk1 = Command::new("ssh")
+                .arg(&ssh_command_cato)
+                .arg("lsblk")
+                .arg("--json")
+                .output()
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err); 
+                    process::exit(1); 
+                });
+            if !lsblk1.status.success() {
+                error!("[ FAILED ] - Fehler beim Auslesen der als cato Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
+                process::exit(1);
+
+            } else {
+                info!("[ OK ] - Drives mit Cato geparsen");
+                parsed_drives = serde_json::from_slice::<Drives>(&lsblk1.stdout)
+                    .unwrap_or_else(|err| { 
+                        error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
+                        process::exit(1); 
+                    });
+            }
         } else {
-            info!("[ OK ] - Drives mit Cato geparsen");
-            parsed_drives = serde_json::from_slice::<Drives>(&lsblk1.stdout)
+            info!("[ OK ] - Drives mit Root geparsen");
+            parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
                 .unwrap_or_else(|err| { 
                     error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
                     process::exit(1); 
                 });
         }
     } else {
-        info!("[ OK ] - Drives mit Root geparsen");
+        let lsblk = Command::new("lsblk")
+            .arg("--json")
+            .output()
+            .unwrap_or_else(|err| {
+                error!("[ FAILED ] - Konnte lsblk nicht starten: {}", err);
+                process::exit(1);
+            });
+        if !lsblk.status.success() {
+            error!("[ FAILED ] - Fehler beim Auslesen der Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
+        }
+        info!("[ OK ] - Drives lokal geparsen");
+
         parsed_drives = serde_json::from_slice::<Drives>(&lsblk.stdout)
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte lsblk nicht parsen: {}", err); 
@@ -159,3 +178,24 @@ pub fn get_path(option: Paths) -> String {
     result.to_str().expect("[ FAILED ] - Gen Path ist fehlgeschlagen").to_string()
 }
 
+pub fn get_iso() -> String {
+    let iso_path = std::path::PathBuf::from(get_path(Paths::Nixconf)).join("result").join("iso");
+    let entries = fs::read_dir(&iso_path)
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte den Result Ordner nicht auslesen: {}", err); 
+            process::exit(1); 
+        });
+
+    for i in entries {
+        if let Ok(file) = i {
+            let path: std::path::PathBuf = file.path();
+            if path.is_file() && path.extension().unwrap_or_default() == "iso" {
+                let target_path = path.to_string_lossy().into_owned();
+                info!("[ OK ] - ISO gefunden");
+                return target_path;
+            }
+        }
+    }
+    error!("[ FAILED ] - Keine .iso Datei im result Ordner gefunden");
+    process::exit(1);
+}

@@ -1,7 +1,7 @@
 use log::{debug, info, error};
 use std::process::{self, Command};
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub enum Branches {
     Xanterella,

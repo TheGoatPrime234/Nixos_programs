@@ -1,7 +1,7 @@
 use std::process::{self, Command};
 use log::{info, error};
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Starte formatierung und partitionierung");

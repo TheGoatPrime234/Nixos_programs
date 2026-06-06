@@ -2,7 +2,7 @@ use log::{debug, info, error};
 use std::process::{self, Command};
 use std::fs;
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub fn files_crylia_start(config: String) {
     let file_path1 = format!("{}/hosts/crylia/configuration.nix", get_path(Paths::Nixconf));

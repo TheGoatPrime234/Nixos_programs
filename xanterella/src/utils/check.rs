@@ -1,7 +1,7 @@
 use std::process::{self, Command};
 use log::{info, error};
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub fn ssh_ping(ip: &String) {
     let ping = Command::new("ping")
@@ -20,16 +20,15 @@ pub fn ssh_ping(ip: &String) {
     }
 
     info!("[ OK ] - Ping erfolgreich");
-    let ssh_command = format!("root@{}", ip);
     let ssh = Command::new("ssh")
-        .arg(&ssh_command)
+        .arg(get_sshstring(&ip))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Tailscale nicht starten: {}", err); 
             process::exit(1); 
         });
     if !ssh.status.success() {
-        error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", ssh_command);
+        error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", String::from_utf8_lossy(&ssh.stderr));
         process::exit(1);
     }
     info!("[ OK ] - SSH-PING erfolgreich");

@@ -2,7 +2,7 @@ use std::process;
 use log::{debug, error};
 use inquire::Select;
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub fn select_host(hosts: Taildevices) -> String {
     let mut options: Vec<String> = vec![];

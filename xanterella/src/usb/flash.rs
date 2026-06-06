@@ -1,0 +1,39 @@
+use crate::utils::get::*;
+use log::{debug, info, error};
+use std::process::{self, Command};
+use std::path::*;
+use std::fs;
+
+pub enum FlashMode {
+    local,
+    remote,
+}
+
+pub fn build_iso(debug: &bool) -> String {
+    info!("[ RUN ] - Starte ISO Build");
+
+    if !debug {
+        let build = Command::new("nix")
+            .arg("build")
+            .arg(".#nixosConfigurations.installer.config.system.build.isoImage")
+            .arg("--impure")
+            .current_dir(get_path(Paths::Nixconf))
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("Konnte nix build nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !build.status.success() {
+            error!("[ FAILED ] - Lokaler ISO Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
+            process::exit(1);
+        }
+    }
+    info!("[ OK ] - ISO Build erfolgreich");
+    get_iso()
+}
+
+/*
+pub fn flash_usb(drive: String, mode: FlashMode, ip: String, debug: &bool) {
+}
+
+*/

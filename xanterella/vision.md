@@ -3,7 +3,7 @@
 - [x] Tailscale Device Fetch
 - [x] Remote Partitioning
 - [x] Remote Mounting
-- [ ] Remote Install
+- [x] Remote Install
 
 ## 0.2v Xanterella - USB
 - [ ] USB Flashing

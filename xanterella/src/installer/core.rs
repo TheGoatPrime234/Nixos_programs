@@ -1,10 +1,10 @@
-use crate::installer::get::*;
 use crate::installer::install::*;
 use crate::installer::file::*;
 use crate::installer::drives::*;
 use crate::utils::git::git_full;
 use crate::utils::check::*;
 use crate::utils::select::*;
+use crate::utils::get::*;
 
 pub fn remote_install(automate: &bool, fast: &bool) {
     let target_ip = select_host(get_taildevices());
