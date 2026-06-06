@@ -2,7 +2,7 @@ use clap::{ValueEnum};
 
 use crate::utils::get::*;
 use crate::utils::select::*;
-use crate::installer::drives::drives_part;
+use crate::installer::core::*;
 use crate::usb::flash::*;
 use crate::usb::core::*;
 

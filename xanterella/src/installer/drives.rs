@@ -3,9 +3,8 @@ use log::{info, error};
 
 use crate::utils::get::*;
 
-pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
-    info!("[ OK ] - Starte formatierung und partitionierung");
-    let drive = format!("/dev/{}", primdrive);
+pub fn part_efi(drive: &String, debug: bool, ip: &String) {
+    info!("[ RUN ] - Starte formatierung und partitionierung für EFI");
     
     if !debug {
         let parted_efi = Command::new("ssh")
@@ -27,7 +26,10 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
         }
     };
     info!("[ OK ] - Efi Partition erstellt");
+}
 
+pub fn part_root(drive: &String, debug: bool, ip: &String) {
+    info!("[ RUN ] - Starte formatierung und partitionierung für ROOT");
     if !debug {
         let parted_root = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -50,7 +52,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Partitionierungs Prozess erfolgreich");
 }
 
-pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
+pub fn format_efi(primdrive: &String, debug: bool, ip: &String) {
     if !debug {
         let mkfs_efi = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -68,7 +70,9 @@ pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
         }
     };
     info!("[ OK ] - Efi Partition formatiert");
+}
 
+pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
     if !debug {
         let mkfs_root = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -84,10 +88,9 @@ pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
             process::exit(1);
         }
     };
-    info!("[ OK ] - Ext4 Partition formatiert");
-
-    info!("[ OK ] - Formatierungs Prozess erfolgreich");
+    info!("[ OK ] - ROOT Partition formatiert");
 }
+//    info!("[ OK ] - Formatierungs Prozess erfolgreich");
 
 pub fn drives_mount(primdrive: &String, ip: &String) {
 
