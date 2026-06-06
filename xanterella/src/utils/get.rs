@@ -7,6 +7,8 @@ use std::env;
 use std::path::*;
 use std::fs;
 
+use crate::usb::flash::*;
+
 #[derive(Deserialize, Debug)]
 pub struct Drives {
     pub blockdevices: Vec<BlockDevice>,
@@ -181,26 +183,51 @@ pub fn get_path(option: Paths) -> String {
     result.to_str().expect("[ FAILED ] - Gen Path ist fehlgeschlagen").to_string()
 }
 
-pub fn get_iso() -> String {
-    info!("[ RUN ] - Finde ISO");
+pub fn get_iso(mode: FlashMode, ip: &String) -> String {
+    match mode {
+        FlashMode::Local => {
+            info!("[ RUN ] - Finde ISO lokal");
 
-    let iso_path = std::path::PathBuf::from(get_path(Paths::Nixconf)).join("result").join("iso");
-    let entries = fs::read_dir(&iso_path)
-        .unwrap_or_else(|err| { 
-            error!("[ FAILED ] - Konnte den Result Ordner nicht auslesen: {}", err); 
-            process::exit(1); 
-        });
+            let iso_path = std::path::PathBuf::from(get_path(Paths::Nixconf)).join("result").join("iso");
+            let entries = fs::read_dir(&iso_path)
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte den Result Ordner nicht auslesen: {}", err); 
+                    process::exit(1); 
+                });
 
-    for i in entries {
-        if let Ok(file) = i {
-            let path: std::path::PathBuf = file.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "iso" {
-                let target_path = path.to_string_lossy().into_owned();
-                info!("[ OK ] - ISO gefunden");
-                return target_path;
+            for i in entries {
+                if let Ok(file) = i {
+                    let path: std::path::PathBuf = file.path();
+                    if path.is_file() && path.extension().unwrap_or_default() == "iso" {
+                        let target_path = path.to_string_lossy().into_owned();
+                        info!("[ OK ] - ISO gefunden");
+                        return target_path;
+                    }
+                }
             }
-        }
+            error!("[ FAILED ] - Keine .iso Datei im result Ordner gefunden");
+            process::exit(1);
+        },
+        FlashMode::Remote => {
+            info!("[ RUN ] - Finde ISO remote");
+
+            let iso_path = format!("realpath {}/result/iso/*.iso", get_path(Paths::Nixconf));
+            let realpath = Command::new("ssh")
+                .arg(get_sshstring(ip))
+                .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+                .arg(iso_path)
+                .output()
+                .unwrap_or_else(|err| { 
+                    error!("[ FAILED ] - Konnte den Result Ordner nicht auslesen: {}", err); 
+                    process::exit(1); 
+                });
+            if !realpath.status.success() {
+                error!("[ FAILED ] - Kontte den Result Ordner nicht auslesen: {}", String::from_utf8_lossy(&realpath.stderr));
+                process::exit(1);
+            }
+            let output = String::from_utf8_lossy(&realpath.stdout).trim().to_string();
+            debug!("ISO Remote Path: {}", output);
+            return output
+        },
     }
-    error!("[ FAILED ] - Keine .iso Datei im result Ordner gefunden");
-    process::exit(1);
 }

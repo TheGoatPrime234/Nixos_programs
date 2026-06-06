@@ -4,7 +4,7 @@ use crate::usb::flash::*;
 use crate::utils::select::*;
 use crate::utils::get::*;
 
-pub fn flash_usb(mode: FlashMode, ip: String, debug: bool) {
+pub fn flash_usb(debug: bool) {
     let mode: FlashMode = select_mode("In welchem Modus soll geflasht werden: ");
     info!("[ RUN ] - Starte Flashing");
 

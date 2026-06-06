@@ -38,7 +38,7 @@ pub fn list_debug(function: &ListDebug) {
             println!("{}", build_iso(&true));
         },
         ListDebug::Flash => {
-            flash_usb(FlashMode::Local, String::from("127.0.0.1"), true);
+            flash_usb(true);
         },
         ListDebug::Hardware => {
             let target_ip = select_host(get_taildevices());

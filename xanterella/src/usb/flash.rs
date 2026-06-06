@@ -31,28 +31,47 @@ pub fn build_iso(debug: &bool) -> String {
         }
     }
     info!("[ OK ] - ISO Build erfolgreich");
-    get_iso()
+    get_iso(FlashMode::Local, &String::from(""))
 }
 
-pub fn flash_iso(drive: String, iso_path: String, _mode: &FlashMode, _ip: &String, debug: &bool) {
+pub fn flash_iso(drive: String, iso_path: String, mode: &FlashMode, ip: &String, debug: &bool) {
     info!("[ RUN ] - Starte USB flash");
 
     if !debug {
-        let dd = Command::new("sudo")
-            .arg("dd")
-            .arg("bs=4M")
-            .arg("conv=fsync")
-            .arg("oflag=direct")
-            .arg(format!("if={}", iso_path))
-            .arg(format!("of=/dev/{}", drive))
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("Konnte 'dd' nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !dd.status.success() {
-            error!("[ FAILED ] - Konnte den USB nicht flashen: {}", String::from_utf8_lossy(&dd.stderr));
-            process::exit(1);
+        match mode {
+            FlashMode::Local => {
+                let dd = Command::new("sudo")
+                    .arg("dd")
+                    .arg("bs=4M")
+                    .arg("conv=fsync")
+                    .arg("oflag=direct")
+                    .arg(format!("if={}", iso_path))
+                    .arg(format!("of=/dev/{}", drive))
+                    .output()
+                    .unwrap_or_else(|err| { 
+                        error!("Konnte 'dd' nicht starten: {}", err); 
+                        process::exit(1); 
+                    });
+                if !dd.status.success() {
+                    error!("[ FAILED ] - Konnte den USB nicht flashen: {}", String::from_utf8_lossy(&dd.stderr));
+                    process::exit(1);
+                }
+            },
+            FlashMode::Remote => {
+                let command_because_lazy = format!("cat {} | sudo dd of=/dev/{} bs=4M conv=fsync", get_iso(mode.clone(), ip), drive);
+                let dd = Command::new("ssh")
+                    .arg(get_sshstring(ip))
+                    .arg(&command_because_lazy)
+                    .output()
+                    .unwrap_or_else(|err| { 
+                        error!("Konnte 'dd' nicht starten: {}", err); 
+                        process::exit(1); 
+                    });
+                if !dd.status.success() {
+                    error!("[ FAILED ] - Konnte den USB nicht flashen: {}", String::from_utf8_lossy(&dd.stderr));
+                    process::exit(1);
+                }
+            },
         }
     }
     info!("[ OK ] - USB flash erfolgreich");
