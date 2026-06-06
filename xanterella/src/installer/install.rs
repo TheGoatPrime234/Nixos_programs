@@ -23,23 +23,8 @@ pub fn build() {
     info!("[ OK ] - Build erfolgreich");
 }
 
-pub fn deploy(ip: &String) {
-    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
-    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
-    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
-    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
-        .unwrap_or_else(|err| { 
-            error!("[ FAILED ] - Konnte Symlink 'result' nicht auflösen: {}", err); 
-            process::exit(1); 
-        })
-        .to_string_lossy()
-        .into_owned();
-    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
-    debug!("System-Pfad im Nix-Store: {}", system_path);
-
-    info!("[ RUN ] - Starte Deployment");
+pub fn copy(ip: &String) {
     info!("[ RUN ] - Starte Copy des Closure");
-
     let copy = Command::new("nix")
         .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
         .args([
@@ -62,9 +47,18 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Closure Copy erfolgreich");
+}
 
-    info!("[ RUN ] - Starte die Installation auf dem Zielgerät");
-
+pub fn profile(ip: &String) {
+    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Symlink 'result' nicht auflösen: {}", err); 
+            process::exit(1); 
+        })
+        .to_string_lossy()
+        .into_owned();
+    debug!("System-Pfad im Nix-Store: {}", system_path);
+    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
     info!("[ RUN ] - Aktivierung des Profiles");
     let profile = Command::new("ssh")
         .arg(get_sshstring(ip))
@@ -77,6 +71,10 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktivierung des Profiles erfolgreich");
+}
+
+pub fn prep(ip: &String) {
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
 
     info!("[ RUN ] - Bereite Dateisystem für nixos-enter vor");
     let prep = Command::new("ssh")
@@ -91,7 +89,10 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Vorbereitung erfolgreich");
+}
 
+pub fn activate(ip: &String) {
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     info!("[ RUN ] - Aktiviere das System");
     let activate = Command::new("ssh")
         .arg(get_sshstring(ip))
@@ -104,7 +105,10 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktivierung des Systems erfolgreich");
+}
 
+pub fn bootloader(ip: &String) {
+    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
     info!("[ RUN ] - Aktualisiere Bootloader");
     let bootloader = Command::new("ssh")
         .arg(get_sshstring(ip))
@@ -117,8 +121,6 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
-
-    info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
 }
 
 pub fn reboot(ip: &String) {

@@ -59,3 +59,11 @@ pub fn drives_mount(primdrive: &String, ip: &String) {
     create_boot_dir(ip);
     mount_boot(primdrive, ip);
 }
+
+pub fn deploy(ip: &String) {
+    copy(ip);
+    profile(ip);
+    prep(ip);
+    activate(ip);
+    bootloader(ip);
+}
