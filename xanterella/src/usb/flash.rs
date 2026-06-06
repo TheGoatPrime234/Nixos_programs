@@ -1,12 +1,10 @@
 use crate::utils::get::*;
-use log::{debug, info, error};
+use log::{info, error};
 use std::process::{self, Command};
-use std::path::*;
-use std::fs;
 
 pub enum FlashMode {
-    local,
-    remote,
+    Local,
+    Remote,
 }
 
 pub fn build_iso(debug: &bool) -> String {
