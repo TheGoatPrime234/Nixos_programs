@@ -1,9 +1,11 @@
 use log::{info, error};
+use strum_macros::{Display, EnumIter};
 
 use std::process::{self, Command};
 
 use crate::utils::get::*;
 
+#[derive(Debug, Clone, EnumIter, Display)]
 pub enum FlashMode {
     Local,
     Remote,

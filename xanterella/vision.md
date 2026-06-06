@@ -6,7 +6,7 @@
 - [x] Remote Install
 
 ## 0.2v Xanterella - USB
-- [ ] USB Flashing
+- [x] USB Flashing
 - [ ] Remote USB Flashing
 
 ## 0.3v Xanterella - Daemon

@@ -1,7 +1,9 @@
 use log::{debug, error};
 use inquire::Select;
+use strum::IntoEnumIterator;
 
 use std::process;
+use std::fmt::Display;
 
 use crate::utils::get::*;
 
@@ -57,4 +59,16 @@ pub fn select_drive(target_ip: &String, automate: bool) -> String {
     } else {
         drives[0].name.clone()
     }
+}
+
+pub fn select_mode<T>(msg: &str) -> T
+where 
+    T: IntoEnumIterator + Display + Clone,
+{
+    let options: Vec<T> = T::iter().collect();
+    let ans = Select::new(msg, options).prompt();
+    ans.unwrap_or_else(|err| {
+        error!("[ FAILED - Konnte den Input nicht auslesen: {}", err);
+        process::exit(1);
+    })
 }
