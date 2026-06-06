@@ -43,7 +43,7 @@ pub enum Paths {
     Nixconf,
 }
 
-pub fn get_hardware(ip: &String) -> String {
+pub fn get_hardware(ip: &str) -> String {
     info!("[ RUN ] - Generiere Hardware");
 
     let ssh = Command::new("ssh")
@@ -65,11 +65,11 @@ pub fn get_hardware(ip: &String) -> String {
     hardware_config
 }
 
-pub fn get_drives(ip: String) -> Drives {
+pub fn get_drives(ip: &str) -> Drives {
     info!("[ RUN ] - Parse Drives");
 
     let parsed_drives;
-    if ip != String::from("127.0.0.1") {
+    if ip != "127.0.0.1" {
         let lsblk = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("lsblk")
@@ -159,11 +159,11 @@ pub fn get_taildevices() -> Taildevices {
         })
 }
 
-pub fn get_sshstring(ip: &String) -> String {
+pub fn get_sshstring(ip: &str) -> String {
     format!("root@{}", ip)
 }
 
-pub fn get_drives_name(primdrive: &String, number: i8) -> String {
+pub fn get_drives_name(primdrive: &str, number: i8) -> String {
     let drive = format!("/dev/{}", primdrive);
     let p_suffix = if primdrive.contains("nvme") || primdrive.contains("mmclblk") {
         "p"
@@ -183,7 +183,7 @@ pub fn get_path(option: Paths) -> String {
     result.to_str().expect("[ FAILED ] - Gen Path ist fehlgeschlagen").to_string()
 }
 
-pub fn get_iso(mode: FlashMode, ip: &String) -> String {
+pub fn get_iso(mode: FlashMode, ip: &str) -> String {
     match mode {
         FlashMode::Local => {
             info!("[ RUN ] - Finde ISO lokal");

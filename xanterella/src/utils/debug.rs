@@ -19,20 +19,20 @@ pub enum ListDebug {
 pub fn list_debug(function: &ListDebug) {
     match function {
         ListDebug::Drives => {
-            for i in get_drives(String::from("127.0.0.1")).blockdevices {
+            for i in get_drives("127.0.0.1").blockdevices {
                 println!(" - - - - - - -");
                 println!("{}", i.name);
                 println!("  {}", i.size);
                 println!("  {}", i.device_type);
             };
-            drives_part(&select_drive(&String::from("127.0.0.1"), false), true, &String::from("127.0.0.1"));
+            drives_part(&select_drive("127.0.0.1", false), true, "127.0.0.1");
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());
         },
         ListDebug::Select => {
             println!("{:?}", get_taildevices());
-            println!("{:?}", get_drives(String::from("127.0.0.1")));
+            println!("{:?}", get_drives("127.0.0.1"));
         },
         ListDebug::Iso => {
             println!("{}", build_iso(&true));

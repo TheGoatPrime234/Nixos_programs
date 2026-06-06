@@ -34,7 +34,7 @@ pub fn build_iso(debug: &bool) -> String {
     get_iso(FlashMode::Local, &String::from(""))
 }
 
-pub fn flash_iso(drive: String, iso_path: String, mode: &FlashMode, ip: &String, debug: &bool) {
+pub fn flash_iso(drive: &str, iso_path: &str, mode: &FlashMode, ip: &str, debug: &bool) {
     info!("[ RUN ] - Starte USB flash");
 
     if !debug {

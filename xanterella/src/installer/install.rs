@@ -23,7 +23,7 @@ pub fn build() {
     info!("[ OK ] - lokaler Build erfolgreich");
 }
 
-pub fn copy(ip: &String) {
+pub fn copy(ip: &str) {
     info!("[ RUN ] - Starte Copy des Closure");
 
     let copy = Command::new("nix")
@@ -50,7 +50,7 @@ pub fn copy(ip: &String) {
     info!("[ OK ] - Copy des Closure erfolgreich");
 }
 
-pub fn profile(ip: &String) {
+pub fn profile(ip: &str) {
     info!("[ RUN ] - Starte Aktivierung des Profiles");
 
     let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
@@ -75,7 +75,7 @@ pub fn profile(ip: &String) {
     info!("[ OK ] - Aktivierung des Profiles erfolgreich");
 }
 
-pub fn prep(ip: &String) {
+pub fn prep(ip: &str) {
     info!("[ RUN ] - Starte Vorbereitung des Dateisystem für nixos-enter vor");
 
     let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
@@ -93,7 +93,7 @@ pub fn prep(ip: &String) {
     info!("[ OK ] - Vorbereitung erfolgreich");
 }
 
-pub fn activate(ip: &String) {
+pub fn activate(ip: &str) {
     info!("[ RUN ] - Aktiviere das System");
 
     let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
@@ -110,7 +110,7 @@ pub fn activate(ip: &String) {
     info!("[ OK ] - Aktivierung des Systems erfolgreich");
 }
 
-pub fn bootloader(ip: &String) {
+pub fn bootloader(ip: &str) {
     info!("[ RUN ] - Starte Aktualisiere Bootloader");
 
     let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
@@ -127,7 +127,7 @@ pub fn bootloader(ip: &String) {
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
 }
 
-pub fn reboot(ip: &String) {
+pub fn reboot(ip: &str) {
     info!("[ RUN ] - System wird neugestartet");
 
     let _reboot = Command::new("ssh")

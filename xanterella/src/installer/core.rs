@@ -54,7 +54,7 @@ pub fn crylia_edit_finish() {
     info!("[ OK ] - Crylia Überarbeitung erfolgreich");
 }
 
-pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
+pub fn drives_part(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Parittionierung");
 
     let drive = format!("/dev/{}", primdrive);
@@ -63,7 +63,7 @@ pub fn drives_part(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Parittionierung erfolgreich");
 }
 
-pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
+pub fn drives_format(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung");
 
     format_efi(primdrive, debug, ip);
@@ -71,7 +71,7 @@ pub fn drives_format(primdrive: &String, debug: bool, ip: &String) {
     info!("[ Ok ] - Formatierung erfolgreich");
 }
 
-pub fn drives_mount(primdrive: &String, ip: &String) {
+pub fn drives_mount(primdrive: &str, ip: &str) {
     info!("[ RUN ] - Starte Mounting");
 
     mount_root(primdrive, ip);
@@ -80,7 +80,7 @@ pub fn drives_mount(primdrive: &String, ip: &String) {
     info!("[ OK ] - Mounting erfolgreich");
 }
 
-pub fn deploy(ip: &String) {
+pub fn deploy(ip: &str) {
     info!("RUN - Starte Deployment");
 
     copy(ip);

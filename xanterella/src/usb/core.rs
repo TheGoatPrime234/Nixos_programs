@@ -10,12 +10,16 @@ pub fn flash_usb(debug: bool) {
 
     match mode {
         FlashMode::Local => {
-            let ip = String::from("127.0.0.1");
-            flash_iso(select_drive(&ip, false), build_iso(&debug), &mode, &ip, &debug);
+            let ip = "127.0.0.1";
+            flash_iso(&select_drive(&ip, false), &build_iso(&debug), &mode, &ip, &debug);
         },
         FlashMode::Remote => {
             let ip = select_host(get_taildevices());
-            flash_iso(select_drive(&ip, false), build_iso(&debug), &mode, &ip, &debug);
+            if debug {
+                flash_iso(&select_drive("127.0.0.1", false), &build_iso(&debug), &mode, &String::from("127.0.0.1"), &debug);
+            } else {
+                flash_iso(&select_drive(&ip, false), &build_iso(&debug), &mode, &ip, &debug);
+            }
         },
     }
     info!("[ OK ] - Flashing erfolgreich");

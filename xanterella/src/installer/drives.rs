@@ -4,7 +4,7 @@ use std::process::{self, Command};
 
 use crate::utils::get::*;
 
-pub fn part_efi(drive: &String, debug: bool, ip: &String) {
+pub fn part_efi(drive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Erstelle Partition EFI");
     
     if !debug {
@@ -29,7 +29,7 @@ pub fn part_efi(drive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Partition EFI erstellt");
 }
 
-pub fn part_root(drive: &String, debug: bool, ip: &String) {
+pub fn part_root(drive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Erstelle Partition ROOT");
 
     if !debug {
@@ -52,7 +52,7 @@ pub fn part_root(drive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Partition Root erstellt");
 }
 
-pub fn format_efi(primdrive: &String, debug: bool, ip: &String) {
+pub fn format_efi(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von EFI");
     if !debug {
         let mkfs_efi = Command::new("ssh")
@@ -73,7 +73,7 @@ pub fn format_efi(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Formatierung von EFI erfolgreich");
 }
 
-pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
+pub fn format_root(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von ROOT");
     if !debug {
         let mkfs_root = Command::new("ssh")
@@ -93,7 +93,7 @@ pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
     info!("[ OK ] - Formatierung von ROOT erfolgreich");
 }
 
-pub fn mount_root(primdrive: &String, ip: &String) {
+pub fn mount_root(primdrive: &str, ip: &str) {
     info!("[ RUN ] - Starte Mounting von root");
 
     let root = Command::new("ssh")
@@ -113,7 +113,7 @@ pub fn mount_root(primdrive: &String, ip: &String) {
     info!("[ OK ] - Mounting von root erfolgreich");
 }
 
-pub fn create_boot_dir(ip: &String) {
+pub fn create_boot_dir(ip: &str) {
         info!("[ OK ] - Starte Erstellung des Boot Dir");
 
         let dir = Command::new("ssh")
@@ -133,7 +133,7 @@ pub fn create_boot_dir(ip: &String) {
         info!("[ OK ] - Erstellung des Boot Dir erfolgreich");
 }
 
-pub fn mount_boot(primdrive: &String, ip: &String) {
+pub fn mount_boot(primdrive: &str, ip: &str) {
     info!("[ RUN ] - Starte Mounting von root");
 
     let boot = Command::new("ssh")
