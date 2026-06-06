@@ -4,7 +4,7 @@ use std::process::{self, Command};
 
 use crate::utils::get::*;
 
-pub fn ping(ip: &String) {
+pub fn ping(ip: &str) {
     info!("[ RUN ] - Starte Ping");
 
     let ping = Command::new("ping")
@@ -24,11 +24,11 @@ pub fn ping(ip: &String) {
     info!("[ OK ] - Ping erfolgreich");
 }
 
-pub fn ping_ssh(ip: &String) {
+pub fn ping_ssh(ip: &str) {
     info!("[ RUN ] - Starte SSH Ping");
 
     let ssh = Command::new("ssh")
-        .arg(get_sshstring(&ip))
+        .arg(get_sshstring(ip))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Tailscale nicht starten: {}", err); 

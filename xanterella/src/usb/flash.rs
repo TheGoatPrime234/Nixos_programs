@@ -31,7 +31,7 @@ pub fn build_iso(debug: &bool) -> String {
         }
     }
     info!("[ OK ] - ISO Build erfolgreich");
-    get_iso(FlashMode::Local, &String::from(""))
+    get_iso(FlashMode::Local, "")
 }
 
 pub fn flash_iso(drive: &str, iso_path: &str, mode: &FlashMode, ip: &str, debug: &bool) {

@@ -2,7 +2,7 @@ use log::info;
 
 use crate::utils::check::*;
 
-pub fn ping_full(ip: &String) {
+pub fn ping_full(ip: &str) {
     info!("[ RUN ] - Starte Ping Tests");
 
     ping(ip);

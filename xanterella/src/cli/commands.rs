@@ -59,10 +59,10 @@ pub fn cli_parse() {
             clean();
         },
         Commands::Debug { option } => {
-            list_debug(&option);
+            list_debug(option);
         },
         Commands::RemoteInstall { automate, fast } => {
-            remote_install(&automate, &fast);
+            remote_install(automate, fast);
         },
     }
 }

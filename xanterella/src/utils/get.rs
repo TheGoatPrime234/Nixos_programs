@@ -71,7 +71,7 @@ pub fn get_drives(ip: &str) -> Drives {
     let parsed_drives;
     if ip != "127.0.0.1" {
         let lsblk = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("lsblk")
             .arg("--json")
             .output()
@@ -227,7 +227,7 @@ pub fn get_iso(mode: FlashMode, ip: &str) -> String {
             }
             let output = String::from_utf8_lossy(&realpath.stdout).trim().to_string();
             debug!("ISO Remote Path: {}", output);
-            return output
+            output
         },
     }
 }

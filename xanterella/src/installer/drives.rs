@@ -9,10 +9,10 @@ pub fn part_efi(drive: &str, debug: bool, ip: &str) {
     
     if !debug {
         let parted_efi = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("parted")
             .arg("-s")
-            .arg(&drive)
+            .arg(drive)
             .args(["mklabel", "gpt"])
             .args(["mkpart", "ESP", "fat32", "1Mib", "512MiB"])
             .args(["set", "1", "esp", "on"])
@@ -34,10 +34,10 @@ pub fn part_root(drive: &str, debug: bool, ip: &str) {
 
     if !debug {
         let parted_root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("parted")
             .arg("-s")
-            .arg(&drive)
+            .arg(drive)
             .args(["mkpart", "primary", "ext4", "512MiB", "100%"])
             .output()
             .unwrap_or_else(|err| { 
@@ -56,9 +56,9 @@ pub fn format_efi(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von EFI");
     if !debug {
         let mkfs_efi = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("mkfs.fat")
-            .arg(get_drives_name(&primdrive, 1))
+            .arg(get_drives_name(primdrive, 1))
             .args(["-F", "32"])
             .output()
             .unwrap_or_else(|err| { 
@@ -77,9 +77,9 @@ pub fn format_root(primdrive: &str, debug: bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von ROOT");
     if !debug {
         let mkfs_root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("mkfs.ext4")
-            .arg(get_drives_name(&primdrive, 2))
+            .arg(get_drives_name(primdrive, 2))
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); 
@@ -97,9 +97,9 @@ pub fn mount_root(primdrive: &str, ip: &str) {
     info!("[ RUN ] - Starte Mounting von root");
 
     let root = Command::new("ssh")
-        .arg(get_sshstring(&ip))
+        .arg(get_sshstring(ip))
         .arg("mount")
-        .arg(get_drives_name(&primdrive, 2))
+        .arg(get_drives_name(primdrive, 2))
         .arg("/mnt")
         .output()
         .unwrap_or_else(|err| { 
@@ -117,7 +117,7 @@ pub fn create_boot_dir(ip: &str) {
         info!("[ OK ] - Starte Erstellung des Boot Dir");
 
         let dir = Command::new("ssh")
-            .arg(get_sshstring(&ip))
+            .arg(get_sshstring(ip))
             .arg("mkdir")
             .arg("-p")
             .arg("/mnt/boot")
@@ -137,9 +137,9 @@ pub fn mount_boot(primdrive: &str, ip: &str) {
     info!("[ RUN ] - Starte Mounting von root");
 
     let boot = Command::new("ssh")
-        .arg(get_sshstring(&ip))
+        .arg(get_sshstring(ip))
         .arg("mount")
-        .arg(get_drives_name(&primdrive, 1))
+        .arg(get_drives_name(primdrive, 1))
         .arg("/mnt/boot")
         .output()
         .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
