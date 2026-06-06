@@ -11,29 +11,33 @@ pub enum EditMode {
 }
 
 pub fn create_hardware(config: String) {
-    let file_path = format!("{}/hosts/crylia/hardware-configuration.nix", get_path(Paths::Nixconf));
     info!("[ RUN ] - Starte Erstellung der Hardware Config für Crylia");
+
+    let file_path = format!("{}/hosts/crylia/hardware-configuration.nix", get_path(Paths::Nixconf));
     fs::write(&file_path, &config)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Hardware Config nicht schreiben: {}", err); 
             process::exit(1); 
         });
-    info!("[ OK ] - Hardware Config für Crylia erstellt");
+    info!("[ OK ] - Erstellung der Hardware Config für Crylia erfolgreich");
 }
 
 pub fn parse_config() -> String {
+    info!("[ RUN ] - Starte Parse für den Inhalt von Crylia");
+
     let file_path = format!("{}/hosts/crylia/configuration.nix", get_path(Paths::Nixconf));
-    info!("[ RUN ] - Starte pars für den Inhalt von Crylia");
     let content = fs::read_to_string(file_path)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Config von Crylia nicht auslesen: {}", err); 
             process::exit(1); 
         });
-    info!("[ OK ] - Parsed Content of Crylia");
+    info!("[ OK ] - Parse erfolgreich");
     content
 }
 
 pub fn edit_config(content: String, mode: EditMode) -> String {
+    info!("[ RUN ] - Starte Inhalt überarbeitung");
+
     let result = match mode {
         EditMode::Add => {
             let Some((anfang, ende)) = content.split_once("  imports = [") else {
@@ -54,31 +58,37 @@ pub fn edit_config(content: String, mode: EditMode) -> String {
             whole_content
         },
     };
+    info!("[ OK ] - Inhalt überarbeitung erfolgreich");
     result
 }
 
 pub fn write_config(content: String) {
-    let file_path = format!("{}/hosts/crylia/configuration.nix", get_path(Paths::Nixconf));
+    info!("[ RUN ] - Starte Schreibprozess von der Hardware Config von Crylia");
 
+    let file_path = format!("{}/hosts/crylia/configuration.nix", get_path(Paths::Nixconf));
     fs::write(file_path, content)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Config von Crylia nicht überschreiben: {}", err); 
             process::exit(1); 
         });
-    info!("[ OK ] - Configuration von Crylia überschreiben");
+    info!("[ OK ] - Schreibprozess von der Hardware Config von Crylia erfolgreich");
 }
 
 pub fn remove_hardware() {
+    info!("[ RUN ] - Starte Löschung von der Hardware Config von Crylia");
+
     let file_path = format!("{}/hosts/crylia/hardware-configuration.nix", get_path(Paths::Nixconf));
     fs::remove_file(file_path)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte die Hardware Config nicht löschen: {}", err); 
             process::exit(1); 
         });
-    info!("[ OK ] - Hardware Config gelöscht");
+    info!("[ OK ] - Löschung von der Hardware Config von Crylia erfolgreic erfolgreichh");
 }
 
 pub fn files_alejandra() {
+    info!("[ OK ] - Starte Alejandra");
+
     let alejandra = Command::new("alejandra")
         .arg(".")
         .current_dir(get_path(Paths::Nixconf))
@@ -92,5 +102,5 @@ pub fn files_alejandra() {
         error!("[ FAILED ] - Konnte die Dateien mit Alejandra nicht formatieren: {}", String::from_utf8_lossy(&alejandra.stderr));
         process::exit(1);
     }
-    info!("[ OK ] - Dateien wurden mit Alejandra formatiert");
+    info!("[ OK ] - Alejandra erfolgreich");
 }

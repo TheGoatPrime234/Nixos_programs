@@ -42,6 +42,8 @@ pub enum Paths {
 }
 
 pub fn get_hardware(ip: &String) -> String {
+    info!("[ RUN ] - Generiere Hardware");
+
     let ssh = Command::new("ssh")
         .arg(get_sshstring(ip))
         .arg("nixos-generate-config --no-filesystems --show-hardware-config")
@@ -56,12 +58,14 @@ pub fn get_hardware(ip: &String) -> String {
     }
 
     let hardware_config = String::from_utf8_lossy(&ssh.stdout).to_string();
-    info!("[ OK ] - Hardware Config erstellt");
+    info!("[ OK ] - Hardware erfolgreich geneiert");
     debug!("{}", hardware_config);
     hardware_config
 }
 
 pub fn get_drives(ip: String) -> Drives {
+    info!("[ RUN ] - Parse Drives");
+
     let parsed_drives;
     if ip != String::from("127.0.0.1") {
         let lsblk = Command::new("ssh")
@@ -126,11 +130,11 @@ pub fn get_drives(ip: String) -> Drives {
             });
     }
     info!("[ OK ] - Drives erfasst");
-    info!("[ OK ] - Drives geparset");
     parsed_drives
 }
 
 pub fn get_taildevices() -> Taildevices {
+    info!("[ RUN ] - Parse Tailscale Geräte");
 
     let tail_status = Command::new("tailscale")
         .arg("status")
@@ -145,7 +149,7 @@ pub fn get_taildevices() -> Taildevices {
         process::exit(1);
     }
 
-    info!("[ OK ] - Fetched Tailscale Devices");
+    info!("[ OK ] - Parse Tailscale Geräte erfolgreich");
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); 
@@ -178,6 +182,8 @@ pub fn get_path(option: Paths) -> String {
 }
 
 pub fn get_iso() -> String {
+    info!("[ RUN ] - Finde ISO");
+
     let iso_path = std::path::PathBuf::from(get_path(Paths::Nixconf)).join("result").join("iso");
     let entries = fs::read_dir(&iso_path)
         .unwrap_or_else(|err| { 

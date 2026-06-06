@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 use std::process::Command;
 
-use crate::utils::check::ssh_ping;
+use crate::utils::core::*;
 use crate::utils::debug::{list_debug, ListDebug};
 use crate::installer::core::*;
 
@@ -53,7 +53,7 @@ pub fn cli_parse() {
             let _ = Command::new("hostname").spawn();
         },
         Commands::Ping { ip } => {
-            ssh_ping(ip);
+            ping_full(ip);
         },
         Commands::Clean => {
             clean();

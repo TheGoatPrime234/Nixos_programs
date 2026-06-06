@@ -34,6 +34,7 @@ pub fn build_iso(debug: &bool) -> String {
 
 pub fn flash_iso(drive: String, iso_path: String, _mode: &FlashMode, _ip: &String, debug: &bool) {
     info!("[ RUN ] - Starte USB flash");
+
     if !debug {
         let dd = Command::new("sudo")
             .arg("dd")

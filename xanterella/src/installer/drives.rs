@@ -5,7 +5,7 @@ use std::process::{self, Command};
 use crate::utils::get::*;
 
 pub fn part_efi(drive: &String, debug: bool, ip: &String) {
-    info!("[ RUN ] - Starte formatierung und partitionierung für EFI");
+    info!("[ RUN ] - Erstelle Partition EFI");
     
     if !debug {
         let parted_efi = Command::new("ssh")
@@ -26,11 +26,12 @@ pub fn part_efi(drive: &String, debug: bool, ip: &String) {
             process::exit(1);
         }
     };
-    info!("[ OK ] - Efi Partition erstellt");
+    info!("[ OK ] - Partition EFI erstellt");
 }
 
 pub fn part_root(drive: &String, debug: bool, ip: &String) {
-    info!("[ RUN ] - Starte formatierung und partitionierung für ROOT");
+    info!("[ RUN ] - Erstelle Partition ROOT");
+
     if !debug {
         let parted_root = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -48,12 +49,11 @@ pub fn part_root(drive: &String, debug: bool, ip: &String) {
             process::exit(1);
         }
     };
-    info!("[ OK ] - Root Partition erstellt");
-
-    info!("[ OK ] - Partitionierungs Prozess erfolgreich");
+    info!("[ OK ] - Partition Root erstellt");
 }
 
 pub fn format_efi(primdrive: &String, debug: bool, ip: &String) {
+    info!("[ RUN ] - Starte Formatierung von EFI");
     if !debug {
         let mkfs_efi = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -70,10 +70,11 @@ pub fn format_efi(primdrive: &String, debug: bool, ip: &String) {
             process::exit(1);
         }
     };
-    info!("[ OK ] - Efi Partition formatiert");
+    info!("[ OK ] - Formatierung von EFI erfolgreich");
 }
 
 pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
+    info!("[ RUN ] - Starte Formatierung von ROOT");
     if !debug {
         let mkfs_root = Command::new("ssh")
             .arg(get_sshstring(&ip))
@@ -89,28 +90,32 @@ pub fn format_root(primdrive: &String, debug: bool, ip: &String) {
             process::exit(1);
         }
     };
-    info!("[ OK ] - ROOT Partition formatiert");
+    info!("[ OK ] - Formatierung von ROOT erfolgreich");
 }
 
 pub fn mount_root(primdrive: &String, ip: &String) {
-        let root = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mount")
-            .arg(get_drives_name(&primdrive, 2))
-            .arg("/mnt")
-            .output()
-            .unwrap_or_else(|err| { 
-                error!("[ FAILED ] - Konnte mount nicht starten: {}", err); 
-                process::exit(1); 
-            });
-        if !root.status.success() {
-            error!("[ FAILED ] - Konnte die Root Partition nicht mounten: {}", String::from_utf8_lossy(&root.stderr));
-            process::exit(1);
-        }
-        info!("[ OK ] - Root Partition gemounted");
+    info!("[ RUN ] - Starte Mounting von root");
+
+    let root = Command::new("ssh")
+        .arg(get_sshstring(&ip))
+        .arg("mount")
+        .arg(get_drives_name(&primdrive, 2))
+        .arg("/mnt")
+        .output()
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte mount nicht starten: {}", err); 
+            process::exit(1); 
+        });
+    if !root.status.success() {
+        error!("[ FAILED ] - Konnte die Root Partition nicht mounten: {}", String::from_utf8_lossy(&root.stderr));
+        process::exit(1);
+    }
+    info!("[ OK ] - Mounting von root erfolgreich");
 }
 
 pub fn create_boot_dir(ip: &String) {
+        info!("[ OK ] - Starte Erstellung des Boot Dir");
+
         let dir = Command::new("ssh")
             .arg(get_sshstring(&ip))
             .arg("mkdir")
@@ -125,19 +130,22 @@ pub fn create_boot_dir(ip: &String) {
             error!("[ FAILED ] - Konnte die den Boot Ordner nicht erstellen: {}", String::from_utf8_lossy(&dir.stderr));
             process::exit(1);
         }
+        info!("[ OK ] - Erstellung des Boot Dir erfolgreich");
 }
 
 pub fn mount_boot(primdrive: &String, ip: &String) {
-        let boot = Command::new("ssh")
-            .arg(get_sshstring(&ip))
-            .arg("mount")
-            .arg(get_drives_name(&primdrive, 1))
-            .arg("/mnt/boot")
-            .output()
-            .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
-        if !boot.status.success() {
-            error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", String::from_utf8_lossy(&boot.stderr));
-            process::exit(1);
-        }
-        info!("[ OK ] - Boot Partition gemounted");
+    info!("[ RUN ] - Starte Mounting von root");
+
+    let boot = Command::new("ssh")
+        .arg(get_sshstring(&ip))
+        .arg("mount")
+        .arg(get_drives_name(&primdrive, 1))
+        .arg("/mnt/boot")
+        .output()
+        .unwrap_or_else(|err| { error!("[ FAILED ] - Konnte mount nicht starten: {}", err); process::exit(1); });
+    if !boot.status.success() {
+        error!("[ FAILED ] - Konnte die Boot Partition nicht mounten: {}", String::from_utf8_lossy(&boot.stderr));
+        process::exit(1);
+    }
+    info!("[ OK ] - Mounting von boot erfolgreich");
 }

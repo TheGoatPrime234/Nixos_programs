@@ -6,7 +6,7 @@ use std::fs;
 use crate::utils::get::*;
 
 pub fn build() {
-    info!("[ RUN ] - Starte loken Build");
+    info!("[ RUN ] - Starte lokalen Build");
     
     let build = Command::new("nix")
         .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
@@ -20,12 +20,12 @@ pub fn build() {
         error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
         process::exit(1);
     }
-
-    info!("[ OK ] - Build erfolgreich");
+    info!("[ OK ] - lokaler Build erfolgreich");
 }
 
 pub fn copy(ip: &String) {
     info!("[ RUN ] - Starte Copy des Closure");
+
     let copy = Command::new("nix")
         .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
         .args([
@@ -47,10 +47,12 @@ pub fn copy(ip: &String) {
         error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
         process::exit(1);
     }
-    info!("[ OK ] - Closure Copy erfolgreich");
+    info!("[ OK ] - Copy des Closure erfolgreich");
 }
 
 pub fn profile(ip: &String) {
+    info!("[ RUN ] - Starte Aktivierung des Profiles");
+
     let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Symlink 'result' nicht auflösen: {}", err); 
@@ -60,7 +62,6 @@ pub fn profile(ip: &String) {
         .into_owned();
     debug!("System-Pfad im Nix-Store: {}", system_path);
     let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
-    info!("[ RUN ] - Aktivierung des Profiles");
     let profile = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -75,9 +76,9 @@ pub fn profile(ip: &String) {
 }
 
 pub fn prep(ip: &String) {
-    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
+    info!("[ RUN ] - Starte Vorbereitung des Dateisystem für nixos-enter vor");
 
-    info!("[ RUN ] - Bereite Dateisystem für nixos-enter vor");
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
     let prep = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(get_sshstring(ip))
@@ -93,8 +94,9 @@ pub fn prep(ip: &String) {
 }
 
 pub fn activate(ip: &String) {
-    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     info!("[ RUN ] - Aktiviere das System");
+
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     let activate = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -109,8 +111,9 @@ pub fn activate(ip: &String) {
 }
 
 pub fn bootloader(ip: &String) {
+    info!("[ RUN ] - Starte Aktualisiere Bootloader");
+
     let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
-    info!("[ RUN ] - Aktualisiere Bootloader");
     let bootloader = Command::new("ssh")
         .arg(get_sshstring(ip))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
@@ -135,6 +138,5 @@ pub fn reboot(ip: &String) {
             error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
             process::exit(1); 
         });
-
-    info!("System neugestartet");
+    info!("Neustart erfolgreich");
 }

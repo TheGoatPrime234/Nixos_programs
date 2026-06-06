@@ -4,7 +4,9 @@ use std::process::{self, Command};
 
 use crate::utils::get::*;
 
-pub fn ssh_ping(ip: &String) {
+pub fn ping(ip: &String) {
+    info!("[ RUN ] - Starte Ping");
+
     let ping = Command::new("ping")
         .args(["-c", "1"])
         .args(["-W", "1"])
@@ -19,8 +21,12 @@ pub fn ssh_ping(ip: &String) {
         error!("[ FAILED ] - Konnte das Gerät nicht pingen: {}", ip);
         process::exit(1);
     }
-
     info!("[ OK ] - Ping erfolgreich");
+}
+
+pub fn ping_ssh(ip: &String) {
+    info!("[ RUN ] - Starte SSH Ping");
+
     let ssh = Command::new("ssh")
         .arg(get_sshstring(&ip))
         .output()
@@ -32,10 +38,12 @@ pub fn ssh_ping(ip: &String) {
         error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", String::from_utf8_lossy(&ssh.stderr));
         process::exit(1);
     }
-    info!("[ OK ] - SSH-PING erfolgreich");
+    info!("[ OK ] - SSH PING erfolgreich");
 }
 
 pub fn nix_check() {
+    info!("[ RUN ] - Starte Flake Check");
+
     let check = Command::new("nixos-rebuild")
         .arg("dry-build")
         .arg("--flake")
@@ -47,7 +55,7 @@ pub fn nix_check() {
             process::exit(1); 
         });
     if check.status.success() {
-        info!("[ OK ] - Nix Flake ist funktionstüchtig");
+        info!("[ OK ] - Flake Check erfolgreich");
     } else {
         error!("[ FAILED ] - Die Nix Flake ist nicht funktionierend: {}", String::from_utf8_lossy(&check.stderr));
         process::exit(1);
