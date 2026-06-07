@@ -127,16 +127,18 @@ pub fn bootloader(ip: &str) {
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
 }
 
-pub fn reboot(ip: &str) {
+pub fn reboot(ip: &str, automate: bool) {
     info!("[ RUN ] - System wird neugestartet");
 
-    let _reboot = Command::new("ssh")
-        .arg(get_sshstring(ip))
-        .arg("reboot")
-        .spawn()
-        .unwrap_or_else(|err| { 
-            error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    info!("Neustart erfolgreich");
+    if !automate {
+        let _reboot = Command::new("ssh")
+            .arg(get_sshstring(ip))
+            .arg("reboot")
+            .spawn()
+            .unwrap_or_else(|err| { 
+                error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
+                process::exit(1); 
+            });
+    }
+    info!("[ OK ] - Neustart erfolgreich");
 }

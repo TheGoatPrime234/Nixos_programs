@@ -135,6 +135,16 @@ pub fn get_drives(ip: &str) -> Drives {
     parsed_drives
 }
 
+pub fn get_sort_drives(drives: Drives) -> Drives {
+    let mut drives = drives;
+    drives.blockdevices.sort_by(|a, b| {
+        let size_a = get_drives_size(&a.size);
+        let size_b = get_drives_size(&b.size);
+        size_b.cmp(&size_a)
+    });
+    drives
+}
+
 pub fn get_taildevices() -> Taildevices {
     info!("[ RUN ] - Parse Tailscale Geräte");
 
@@ -232,6 +242,27 @@ pub fn get_iso(mode: FlashMode, ip: &str) -> String {
     }
 }
 
+pub fn get_drives_size(size_str: &str) -> u64 {
+    let size_str = size_str.trim().to_uppercase();
+    let mut multiplier: f64 = 1.0;
+    let mut num_str = size_str.as_str();
+
+    if size_str.ends_with('T') {
+        multiplier = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+        num_str = &size_str[..size_str.len() - 1];
+    } else if size_str.ends_with('G') {
+        multiplier = 1024.0 * 1024.0 * 1024.0;
+        num_str = &size_str[..size_str.len() - 1];
+    } else if size_str.ends_with('M') {
+        multiplier = 1024.0 * 1024.0;
+        num_str = &size_str[..size_str.len() - 1];
+    }
+
+    let val: f64 = num_str.parse().unwrap_or(0.0);
+    
+    (val * multiplier) as u64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -286,5 +317,69 @@ mod tests {
         assert_eq!(redmi_device.name, "Redmi Note 13 Pro");
         assert_eq!(redmi_device.os, "android");
         assert_eq!(redmi_device.ip[0], "100.124.213.38"); 
+    }
+    #[test]
+    fn test_get_drives_size() {
+        let size = "1M";
+        assert_eq!(get_drives_size(&size), 1048576);
+    }
+    #[test]
+    fn test_parse_drives_json() {
+        let mock_json = r#"{
+            "blockdevices": [
+                {
+                    "name": "nvme0n1",
+                    "size": "1T",
+                    "type": "disk"
+                },
+                {
+                    "name": "sda",
+                    "size": "500G",
+                    "type": "disk"
+                },
+                {
+                    "name": "sda1",
+                    "size": "500G",
+                    "type": "part"
+                }
+            ]
+        }"#;
+        let parsed: Drives = serde_json::from_str(mock_json).expect("Konnte das JSON nicht formatieren");
+        assert_eq!(parsed.blockdevices.len(), 3);
+        assert_eq!(parsed.blockdevices[0].name, "nvme0n1");
+        assert_eq!(parsed.blockdevices[0].size, "1T");
+        assert_eq!(parsed.blockdevices[0].device_type, "disk");
+        assert_eq!(parsed.blockdevices[2].name, "sda1");
+        assert_eq!(parsed.blockdevices[2].device_type, "part");
+    }
+    #[test]
+    fn test_sort_drives() {
+        let mock_json = r#"{
+            "blockdevices": [
+                {
+                    "name": "nvme0n1",
+                    "size": "1T",
+                    "type": "disk"
+                },
+                {
+                    "name": "sda",
+                    "size": "500G",
+                    "type": "disk"
+                },
+                {
+                    "name": "sda1",
+                    "size": "400G",
+                    "type": "part"
+                }
+            ]
+        }"#;
+        let parsed: Drives = serde_json::from_str(mock_json).expect("Konnte das JSON nicht formatieren");
+        let sorted: Drives = get_sort_drives(parsed);
+        assert_eq!(sorted.blockdevices.len(), 3);
+        assert_eq!(sorted.blockdevices[0].name, "nvme0n1");
+        assert_eq!(sorted.blockdevices[0].size, "1T");
+        assert_eq!(sorted.blockdevices[0].device_type, "disk");
+        assert_eq!(sorted.blockdevices[2].name, "sda1");
+        assert_eq!(sorted.blockdevices[2].device_type, "part");
     }
 }

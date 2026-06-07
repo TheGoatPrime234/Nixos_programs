@@ -3,11 +3,13 @@ use clap::{ValueEnum};
 use crate::utils::get::*;
 use crate::utils::select::*;
 use crate::installer::core::*;
+use crate::installer::install::*;
 use crate::usb::flash::*;
 use crate::usb::core::*;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum ListDebug {
+    Reboot,
     Drives,
     Taildevices,
     Select,
@@ -18,8 +20,13 @@ pub enum ListDebug {
 
 pub fn list_debug(function: &ListDebug) {
     match function {
+        ListDebug::Reboot => {
+            reboot("127.0.0.1", true);
+        },
         ListDebug::Drives => {
-            for i in get_drives("127.0.0.1").blockdevices {
+            let drives = get_drives("127.0.0.1");
+            println!("{:?}", drives);
+            for i in &drives.blockdevices {
                 println!(" - - - - - - -");
                 println!("{}", i.name);
                 println!("  {}", i.size);
