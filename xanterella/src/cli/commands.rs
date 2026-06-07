@@ -66,3 +66,13 @@ pub fn cli_parse() {
         },
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+    #[test]
+    fn verify_cli() {
+        Cli::command().debug_assert();
+    }
+}

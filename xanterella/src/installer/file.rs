@@ -22,6 +22,18 @@ pub fn create_hardware(config: String) {
     info!("[ OK ] - Erstellung der Hardware Config für Crylia erfolgreich");
 }
 
+pub fn remove_hardware() {
+    info!("[ RUN ] - Starte Löschung von der Hardware Config von Crylia");
+
+    let file_path = format!("{}/hosts/crylia/hardware-configuration.nix", get_path(Paths::Nixconf));
+    fs::remove_file(file_path)
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte die Hardware Config nicht löschen: {}", err); 
+            process::exit(1); 
+        });
+    info!("[ OK ] - Löschung von der Hardware Config von Crylia erfolgreic erfolgreichh");
+}
+
 pub fn parse_config() -> String {
     info!("[ RUN ] - Starte Parse für den Inhalt von Crylia");
 
@@ -74,18 +86,6 @@ pub fn write_config(content: String) {
     info!("[ OK ] - Schreibprozess von der Hardware Config von Crylia erfolgreich");
 }
 
-pub fn remove_hardware() {
-    info!("[ RUN ] - Starte Löschung von der Hardware Config von Crylia");
-
-    let file_path = format!("{}/hosts/crylia/hardware-configuration.nix", get_path(Paths::Nixconf));
-    fs::remove_file(file_path)
-        .unwrap_or_else(|err| { 
-            error!("[ FAILED ] - Konnte die Hardware Config nicht löschen: {}", err); 
-            process::exit(1); 
-        });
-    info!("[ OK ] - Löschung von der Hardware Config von Crylia erfolgreic erfolgreichh");
-}
-
 pub fn files_alejandra() {
     info!("[ OK ] - Starte Alejandra");
 
@@ -104,3 +104,26 @@ pub fn files_alejandra() {
     }
     info!("[ OK ] - Alejandra erfolgreich");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_edit_config_add_hardware() {
+        let dummy_config = String::from("\n{\n  imports = [\n    ./module.nix\n  ];\n}\n");
+        let result = edit_config(dummy_config, EditMode::Add);
+        
+        assert!(result.contains("./hardware-configuration.nix"));
+        assert!(result.contains("imports = [")); 
+    }
+
+    #[test]
+    fn test_edit_config_remove_hardware() {
+        let dummy_config = String::from("\n  imports = [\n    ./hardware-configuration.nix\n    ./module.nix\n  ];\n");
+        let result = edit_config(dummy_config, EditMode::Remove);
+
+        assert!(!result.contains("./hardware-configuration.nix"));
+        assert!(result.contains("./module.nix"));
+    }
+}
+

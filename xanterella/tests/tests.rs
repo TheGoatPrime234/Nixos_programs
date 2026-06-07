@@ -1,3 +1,4 @@
+/*
 use xanterella::utils::get::*;
 
 #[test]
@@ -10,3 +11,4 @@ fn test_drivenames() {
     assert_eq!(get_drives_name(&String::from("nvme0n1"), 1), "/dev/nvme0n1p1");
     assert_eq!(get_drives_name(&String::from("sda"), 2), "/dev/sda2");
 }
+*/

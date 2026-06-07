@@ -7,6 +7,6 @@ fn test_sshstring() {
 
 #[test]
 fn test_drivenames() {
-    assert_eq!(get_drive_name(&String::from("nvme0n1"), 1), "nvme0n1p1");
-    assert_eq!(get_drive_name(&String::from("sda"), 2), "sda2");
+    assert_eq!(get_drives_name(&String::from("nvme0n1"), 1), "nvme0n1p1");
+    assert_eq!(get_drives_name(&String::from("sda"), 2), "sda2");
 }
