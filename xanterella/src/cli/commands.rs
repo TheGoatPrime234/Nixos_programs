@@ -4,6 +4,7 @@ use std::process::Command;
 
 use crate::utils::core::*;
 use crate::utils::debug::{list_debug, ListDebug};
+use crate::usb::core::*;
 use crate::installer::core::*;
 
 #[derive(Parser)]
@@ -33,6 +34,7 @@ pub enum Commands {
         #[arg(long = "fast", short = 'f')]
         fast: bool,
     },
+    Flash,
 }
 
 pub fn cli_parse() {
@@ -63,6 +65,9 @@ pub fn cli_parse() {
         },
         Commands::RemoteInstall { automate, fast } => {
             remote_install(automate, fast);
+        },
+        Commands::Flash => {
+            flash_usb(false);
         },
     }
 }
