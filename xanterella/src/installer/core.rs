@@ -34,6 +34,7 @@ pub fn remote_install(automate: &bool, fast: &bool) {
         drives_mount(&primdrive, &target_ip);
         build();
         deploy(&target_ip);
+        logout_tailscale(&target_ip, false);
         reboot(&target_ip, false);
     }
     // -----------------------------------------------------

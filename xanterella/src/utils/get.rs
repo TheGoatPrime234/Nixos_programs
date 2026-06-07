@@ -43,11 +43,16 @@ pub enum Paths {
     Nixconf,
 }
 
+pub enum User {
+    Root,
+    Cato,
+}
+
 pub fn get_hardware(ip: &str) -> String {
     info!("[ RUN ] - Generiere Hardware");
 
     let ssh = Command::new("ssh")
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .arg("nixos-generate-config --no-filesystems --show-hardware-config")
         .output()
         .unwrap_or_else(|err| { 
@@ -71,7 +76,7 @@ pub fn get_drives(ip: &str) -> Drives {
     let parsed_drives;
     if ip != "127.0.0.1" {
         let lsblk = Command::new("ssh")
-            .arg(get_sshstring(ip))
+            .arg(get_sshstring(ip, User::Root))
             .arg("lsblk")
             .arg("--json")
             .output()
@@ -82,9 +87,8 @@ pub fn get_drives(ip: &str) -> Drives {
         if !lsblk.status.success() {
             error!("[ FAILED ] - Fehler beim Auslesen der als root Partitionen: {}", String::from_utf8_lossy(&lsblk.stderr));
 
-            let ssh_command_cato = format!("cato@{}", ip);
             let lsblk1 = Command::new("ssh")
-                .arg(&ssh_command_cato)
+                .arg(get_sshstring(ip, User::Cato))
                 .arg("lsblk")
                 .arg("--json")
                 .output()
@@ -169,8 +173,16 @@ pub fn get_taildevices() -> Taildevices {
         })
 }
 
-pub fn get_sshstring(ip: &str) -> String {
-    format!("root@{}", ip)
+pub fn get_sshstring(ip: &str, user: User) -> String {
+    let result = match user {
+        User::Root => {
+            format!("root@{}", ip)
+        },
+        User::Cato => {
+            format!("cato@{}", ip)
+        },
+    };
+    result
 }
 
 pub fn get_drives_name(primdrive: &str, number: i8) -> String {
@@ -223,7 +235,7 @@ pub fn get_iso(mode: FlashMode, ip: &str) -> String {
 
             let iso_path = format!("realpath {}/result/iso/*.iso", get_path(Paths::Nixconf));
             let realpath = Command::new("ssh")
-                .arg(get_sshstring(ip))
+                .arg(get_sshstring(ip, User::Root))
                 .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
                 .arg(iso_path)
                 .output()

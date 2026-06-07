@@ -63,7 +63,7 @@ pub fn profile(ip: &str) {
     debug!("System-Pfad im Nix-Store: {}", system_path);
     let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
     let profile = Command::new("ssh")
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(&profile_cmd)
         .output()
@@ -81,7 +81,7 @@ pub fn prep(ip: &str) {
     let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
     let prep = Command::new("ssh")
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .arg(prep_cmd)
         .output()
         .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'nix' nicht starten: {}", err); process::exit(1); });
@@ -98,7 +98,7 @@ pub fn activate(ip: &str) {
 
     let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     let activate = Command::new("ssh")
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(activate_cmd)
         .output()
@@ -115,7 +115,7 @@ pub fn bootloader(ip: &str) {
 
     let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
     let bootloader = Command::new("ssh")
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
         .arg(bootloader_cmd)
         .output()
@@ -127,12 +127,29 @@ pub fn bootloader(ip: &str) {
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
 }
 
+pub fn logout_tailscale(ip: &str, debug: bool) {
+    info!("[ RUN ] - Logge Gerät aus Tailscale aus");
+
+    if !debug {
+        let logout = Command::new("ssh")
+            .arg(get_sshstring(ip, User::Root))
+            .args(["tailscale", "logout"])
+            .output()
+            .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'tailscale' nicht starten: {}", err); process::exit(1); });
+        if !logout.status.success() {
+            error!("[ FAILED ] - Konnte Gerät nicht aus Tailscale ausloggen: {}", String::from_utf8_lossy(&logout.stderr));
+            process::exit(1);
+        };
+    }
+    info!("[ OK ] - Gerät erfolgreich aus Tailscale ausgeloggt");
+}
+
 pub fn reboot(ip: &str, automate: bool) {
     info!("[ RUN ] - System wird neugestartet");
 
     if !automate {
         let _reboot = Command::new("ssh")
-            .arg(get_sshstring(ip))
+            .arg(get_sshstring(ip, User::Root))
             .arg("reboot")
             .spawn()
             .unwrap_or_else(|err| { 
