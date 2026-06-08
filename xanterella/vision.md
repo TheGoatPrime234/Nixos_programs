@@ -9,6 +9,11 @@
 - [x] USB Flashing
 - [x] Remote USB Flashing
 
+### 0.25v Xanterella - Auto Init
+- [ ] - Git Init
+- [ ] - GitHub Init
+- [ ] - Tailscale Init
+
 ## 0.3v Xanterella - Daemon
 - [ ] Basic USB Discovery Daemon
 - [ ] Remote-Install Deamon
