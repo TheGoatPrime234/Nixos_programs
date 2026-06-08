@@ -1,57 +1,77 @@
-use std::process::Command;
+use log::{info, error, debug};
+
+use std::process::{self, Command};
+
+use crate::utils::get::*;
 
 pub fn init_git_email(ip: &str) {
-    info!("[ RUN ] - Git email wird deklariert");
+    info!("[ RUN ] - Git email wird eingestellt");
 
-    let git = Command::new("ssh")
-        .arg(get_sshstring(ip, User::Cato))
-        .args(["git", "config", "--global", "user.email", "cato.jenisch@gmail.com"])
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte git nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !git.status.success() {
-        error!("[ FAILED ] - Konnte in Git die Email nicht festlegen: {}", String::from_utf8_lossy(&git.stderr));
-        process::exit(1);
+    let mut git = if ip != "127.0.0.1" {
+        let mut c = Command::new("ssh");
+        c.arg(get_sshstring(ip, User::Cato));
+        c.args(["git", "config", "--global", "user.email", "cato.jenisch@gmail.com"]);
+        c
+    } else {
+        let mut c = Command::new("git");
+        c.args(["config", "--global", "user.email", "cato.jenisch@gmail.com"]);
+        c
     };
-    info!("[ OK ] - Git email deklariert");
+    let status = git.status().unwrap_or_else(|err| {
+        error!("[ FAILED ] - Konnte git nicht starten: {}", err);
+        process::exit(1);
+    });
+    if !status.success() {
+        error!("[ FAILED ] - Konnte Git nicht einstellen");
+        process::exit(1);
+    }
+    info!("[ OK ] - Git email eingestellt");
 }
 
 pub fn init_git_name(ip: &str) {
-    info!("[ RUN ] - Git name wird deklariert");
+    info!("[ RUN ] - Git name wird eingestellt");
 
-    let git = Command::new("ssh")
-        .arg(get_sshstring(ip, User::Cato))
-        .args(["git", "config", "--global", "user.name", "Xeravus"])
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte git nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !git.status.success() {
-        error!("[ FAILED ] - Konnte in Git den Namen nicht festlegen: {}", String::from_utf8_lossy(&git.stderr));
-        process::exit(1);
+    let mut git = if ip != "127.0.0.1" {
+        let mut c = Command::new("ssh");
+        c.arg(get_sshstring(ip, User::Cato));
+        c.args(["git", "config", "--global", "user.name", "Xeravus"]);
+        c
+    } else {
+        let mut c = Command::new("git");
+        c.args(["config", "--global", "user.name", "Xeravus"]);
+        c
     };
-    info!("[ OK ] - Git name deklariert");
+    let status = git.status().unwrap_or_else(|err| {
+        error!("[ FAILED ] - Konnte git nicht starten: {}", err);
+        process::exit(1);
+    });
+    if !status.success() {
+        error!("[ FAILED ] - Konnte Git nicht einstellen");
+        process::exit(1);
+    }
+    info!("[ OK ] - Git name eingestellt");
 }
 
 pub fn init_github(ip: &str) {
     info!("[ RUN ] - Starte Verbindung zwischen Git und GitHub");
 
-    let gh = Command::new("ssh")
-        .arg(get_sshstring(ip, User::Cato))
-        .args(["gh", "auth", "login", "--hostname", "github.com", "-w", "-p", "https"])
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte gh nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !gh.status.success() {
-        error!("[ Failed ] - Konnte Git nicht mit GitHub verknüpfen: {}", String::from_utf8_lossy(&gh.stderr));
-        process::exit(1);
+    let mut gh = if ip != "127.0.0.1" {
+        let mut c = Command::new("ssh");
+        c.arg(get_sshstring(ip, User::Cato));
+        c.args(["gh", "auth", "login", "--hostname", "github.com", "-w", "-p", "https"]);
+        c
     } else {
-        debug!("GH Output: {}", String::from_utf8_lossy(&gh.stdout));
+        let mut c = Command::new("gh");
+        c.args(["auth", "login", "--hostname", "github.com", "-w", "-p", "https"]);
+        c 
+    };
+    let status = gh.status().unwrap_or_else(|err| {
+        error!("[ FAILED ] - Konnte gh nicht starten: {}", err);
+        process::exit(1);
+    });
+    if !status.success() {
+        error!("[ FAILED ] - Konnte Git und GitHub nicht verknüpfen");
+        process::exit(1);
     }
     info!("[ OK ] - GitHub Verknüpfung erfolgreich");
 }

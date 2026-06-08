@@ -6,6 +6,7 @@ use crate::installer::core::*;
 use crate::installer::install::*;
 use crate::usb::flash::*;
 use crate::usb::core::*;
+use crate::init::core::*;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum ListDebug {
@@ -16,6 +17,7 @@ pub enum ListDebug {
     Iso,
     Flash,
     Hardware,
+    Init,
 }
 
 pub fn list_debug(function: &ListDebug) {
@@ -51,6 +53,9 @@ pub fn list_debug(function: &ListDebug) {
         ListDebug::Hardware => {
             let target_ip = select_host(get_taildevices());
             println!("{}", get_hardware(&target_ip));
+        },
+        ListDebug::Init => {
+            init_git("127.0.0.1");
         },
     }
 }

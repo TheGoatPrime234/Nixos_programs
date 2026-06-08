@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::init::github::*;
 
 pub fn init_git(ip: &str) {
