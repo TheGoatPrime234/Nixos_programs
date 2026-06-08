@@ -23,7 +23,7 @@ pub enum ListDebug {
 pub fn list_debug(function: &ListDebug) {
     match function {
         ListDebug::Reboot => {
-            reboot("127.0.0.1", true);
+            reboot("127.0.0.1", &true);
         },
         ListDebug::Drives => {
             let drives = get_drives("127.0.0.1");
@@ -34,8 +34,8 @@ pub fn list_debug(function: &ListDebug) {
                 println!("  {}", i.size);
                 println!("  {}", i.device_type);
             };
-            drives_part(&select_drive("127.0.0.1", true), true, "127.0.0.1");
-            drives_part(&select_drive("127.0.0.1", false), true, "127.0.0.1");
+            drives_part(&select_drive("127.0.0.1", &true), &true, "127.0.0.1");
+            drives_part(&select_drive("127.0.0.1", &false), &true, "127.0.0.1");
         },
         ListDebug::Taildevices => {
             println!("{:?}", get_taildevices());

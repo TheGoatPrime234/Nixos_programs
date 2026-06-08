@@ -4,7 +4,7 @@ use std::process::{self, Command};
 
 use crate::utils::get::*;
 
-pub fn part_efi(drive: &str, debug: bool, ip: &str) {
+pub fn part_efi(drive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Erstelle Partition EFI");
     
     if !debug {
@@ -29,7 +29,7 @@ pub fn part_efi(drive: &str, debug: bool, ip: &str) {
     info!("[ OK ] - Partition EFI erstellt");
 }
 
-pub fn part_root(drive: &str, debug: bool, ip: &str) {
+pub fn part_root(drive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Erstelle Partition ROOT");
 
     if !debug {
@@ -52,7 +52,7 @@ pub fn part_root(drive: &str, debug: bool, ip: &str) {
     info!("[ OK ] - Partition Root erstellt");
 }
 
-pub fn format_efi(primdrive: &str, debug: bool, ip: &str) {
+pub fn format_efi(primdrive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von EFI");
     if !debug {
         let mkfs_efi = Command::new("ssh")
@@ -73,7 +73,7 @@ pub fn format_efi(primdrive: &str, debug: bool, ip: &str) {
     info!("[ OK ] - Formatierung von EFI erfolgreich");
 }
 
-pub fn format_root(primdrive: &str, debug: bool, ip: &str) {
+pub fn format_root(primdrive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung von ROOT");
     if !debug {
         let mkfs_root = Command::new("ssh")

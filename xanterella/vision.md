@@ -9,20 +9,20 @@
 - [x] USB Flashing
 - [x] Remote USB Flashing
 
-### 0.25v Xanterella - Auto Init
+## 0.3v Xanterella - Daemon
+- [x] Basic USB Discovery Daemon
+- [x] Remote-Install Deamon
+- [ ] Small Approval App
+
+## 0.4v Xanterella - Auto Init
 - [x] - Git Init
 - [ ] - GitHub Init
 - [ ] - Tailscale Init
 
-## 0.3v Xanterella - Daemon
-- [ ] Basic USB Discovery Daemon
-- [ ] Remote-Install Deamon
-- [ ] Small Approval App
-
-## 0.4v Xanterella - Config
+## 0.5v Xanterella - Config
 - [ ] Basic add Host
 - [ ] Basic Colmena changes
 - [ ] Basic list Modules for Host
 
-## 0.5v Xanterella - TUI
+## 0.6v Xanterella - TUI
 - [ ] From CLI to TUI

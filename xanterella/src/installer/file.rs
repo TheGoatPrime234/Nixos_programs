@@ -87,7 +87,7 @@ pub fn write_config(content: String) {
 }
 
 pub fn files_alejandra() {
-    info!("[ OK ] - Starte Alejandra");
+    info!("[ RUN ] - Starte Alejandra");
 
     let alejandra = Command::new("alejandra")
         .arg(".")

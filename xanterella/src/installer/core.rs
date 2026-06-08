@@ -9,33 +9,63 @@ use crate::utils::core::*;
 use crate::utils::select::*;
 use crate::utils::get::*;
 
-pub fn remote_install(automate: &bool, fast: &bool) {
+pub fn remote_install(automate: &bool, fast: &bool, debug: &bool) {
     let target_ip = select_host(get_taildevices());
     ping_full(&target_ip);
     if *fast {
-        let primdrive = select_drive(&target_ip, *automate);
-        drives_part(&primdrive, true, &target_ip);
-        drives_format(&primdrive, true, &target_ip);
+        let primdrive = select_drive(&target_ip, automate);
+        drives_part(&primdrive, debug, &target_ip);
+        drives_format(&primdrive, debug, &target_ip);
         crylia_edit_start(get_hardware(&target_ip));
         git_full(String::from("Xanterella Remote-Install (fast)"));
         drives_mount(&primdrive, &target_ip);
-        build();
-        deploy(&target_ip);
-        reboot(&target_ip, false);
+        build(debug);
+        deploy(&target_ip, debug);
+        reboot(&target_ip, debug);
     } else {
         crylia_edit_start(get_hardware(&target_ip));
         git_full(String::from("Xanterella Remote-Install"));
         if !*fast {
             nix_check();
         };
-        let primdrive = select_drive(&target_ip, *automate);
-        drives_part(&primdrive, true, &target_ip);
-        drives_format(&primdrive, true, &target_ip);
+        let primdrive = select_drive(&target_ip, automate);
+        drives_part(&primdrive, debug, &target_ip);
+        drives_format(&primdrive, debug, &target_ip);
         drives_mount(&primdrive, &target_ip);
-        build();
-        deploy(&target_ip);
-        logout_tailscale(&target_ip, false);
-        reboot(&target_ip, false);
+        build(debug);
+        deploy(&target_ip, debug);
+        reboot(&target_ip, debug);
+    }
+    // -----------------------------------------------------
+    clean();
+}
+
+pub fn daemon_install(automate: bool, fast: bool, ip: String, debug: bool) {
+    let target_ip: &str = &ip;
+    ping_full(&target_ip);
+    if fast {
+        let primdrive = select_drive(&target_ip, &automate);
+        drives_part(&primdrive, &debug, &target_ip);
+        drives_format(&primdrive, &debug, &target_ip);
+        crylia_edit_start(get_hardware(&target_ip));
+        git_full(String::from("Xanterella Remote-Install (fast)"));
+        drives_mount(&primdrive, &target_ip);
+        build(&debug);
+        deploy(&target_ip, &debug);
+        reboot(&target_ip, &false);
+    } else {
+        crylia_edit_start(get_hardware(&target_ip));
+        git_full(String::from("Xanterella Remote-Install"));
+        if !fast {
+            nix_check();
+        };
+        let primdrive = select_drive(&target_ip, &automate);
+        drives_part(&primdrive, &debug, &target_ip);
+        drives_format(&primdrive, &debug, &target_ip);
+        drives_mount(&primdrive, &target_ip);
+        build(&debug);
+        deploy(&target_ip, &debug);
+        reboot(&target_ip, &false);
     }
     // -----------------------------------------------------
     clean();
@@ -67,7 +97,7 @@ pub fn crylia_edit_finish() {
     info!("[ OK ] - Crylia Überarbeitung erfolgreich");
 }
 
-pub fn drives_part(primdrive: &str, debug: bool, ip: &str) {
+pub fn drives_part(primdrive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Starte Parittionierung");
 
     let drive = format!("/dev/{}", primdrive);
@@ -76,7 +106,7 @@ pub fn drives_part(primdrive: &str, debug: bool, ip: &str) {
     info!("[ OK ] - Parittionierung erfolgreich");
 }
 
-pub fn drives_format(primdrive: &str, debug: bool, ip: &str) {
+pub fn drives_format(primdrive: &str, debug: &bool, ip: &str) {
     info!("[ RUN ] - Starte Formatierung");
 
     format_efi(primdrive, debug, ip);
@@ -93,13 +123,15 @@ pub fn drives_mount(primdrive: &str, ip: &str) {
     info!("[ OK ] - Mounting erfolgreich");
 }
 
-pub fn deploy(ip: &str) {
-    info!("RUN - Starte Deployment");
+pub fn deploy(ip: &str, debug: &bool) {
+    info!("[ RUN ] - Starte Deployment");
 
-    copy(ip);
-    profile(ip);
-    prep(ip);
-    activate(ip);
-    bootloader(ip);
+    if !debug {
+        copy(ip);
+        profile(ip);
+        prep(ip);
+        activate(ip);
+        bootloader(ip);
+    }
     info!("[ OK ] - Deployment erfolgreich");
 }

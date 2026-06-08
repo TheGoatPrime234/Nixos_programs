@@ -150,8 +150,8 @@ pub fn get_sort_drives(drives: Drives) -> Drives {
 }
 
 pub fn get_taildevices() -> Taildevices {
-    info!("[ RUN ] - Parse Tailscale Geräte");
-
+    //info!("[ RUN ] - Parse Tailscale Geräte");
+    
     let tail_status = Command::new("tailscale")
         .arg("status")
         .arg("--json")
@@ -165,7 +165,7 @@ pub fn get_taildevices() -> Taildevices {
         process::exit(1);
     }
 
-    info!("[ OK ] - Parse Tailscale Geräte erfolgreich");
+    //info!("[ OK ] - Parse Tailscale Geräte erfolgreich");
     serde_json::from_slice::<Taildevices>(&tail_status.stdout)
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte den Output von Tailscale nicht parsen: {}", err); 

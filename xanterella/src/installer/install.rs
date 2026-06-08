@@ -5,20 +5,22 @@ use std::fs;
 
 use crate::utils::get::*;
 
-pub fn build() {
+pub fn build(debug: &bool) {
     info!("[ RUN ] - Starte lokalen Build");
     
-    let build = Command::new("nix")
-        .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
-        .current_dir(get_path(Paths::Nixconf))
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte nix build nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !build.status.success() {
-        error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
-        process::exit(1);
+    if !debug {
+        let build = Command::new("nix")
+            .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
+            .current_dir(get_path(Paths::Nixconf))
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("Konnte nix build nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !build.status.success() {
+            error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
+            process::exit(1);
+        }
     }
     info!("[ OK ] - lokaler Build erfolgreich");
 }
@@ -127,35 +129,27 @@ pub fn bootloader(ip: &str) {
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
 }
 
-pub fn logout_tailscale(ip: &str, debug: bool) {
-    info!("[ RUN ] - Logge Gerät aus Tailscale aus");
+pub fn reboot(ip: &str, debug: &bool) {
+    info!("[ RUN ] - Logge aus Tailscale aus und starte neu...");
 
     if !debug {
-        let logout = Command::new("ssh")
-            .arg(get_sshstring(ip, User::Root))
-            .args(["tailscale", "logout"])
-            .output()
-            .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'tailscale' nicht starten: {}", err); process::exit(1); });
-        if !logout.status.success() {
-            error!("[ FAILED ] - Konnte Gerät nicht aus Tailscale ausloggen: {}", String::from_utf8_lossy(&logout.stderr));
-            process::exit(1);
-        };
+        let magic_cmd = "nohup sh -c 'sleep 2 && tailscale logout && reboot' > /dev/null 2>&1 &";
+        let logout_reboot = Command::new("ssh")
+            .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+            .arg(format!("root@{}", ip))
+            .arg(magic_cmd)
+            .output();
+        match logout_reboot {
+            Ok(output) => {
+                if output.status.success() {
+                    info!("[ OK ] - Befehl abgesetzt. Das Gerät loggt sich aus und startet neu.");
+                } else {
+                    error!("[ FAILED ] - SSH Befehl schlug fehl: {}", String::from_utf8_lossy(&output.stderr));
+                }
+            }
+            Err(e) => {
+                error!("[ FAILED ] - Konnte SSH nicht ausführen: {}", e);
+            }
+        }
     }
-    info!("[ OK ] - Gerät erfolgreich aus Tailscale ausgeloggt");
-}
-
-pub fn reboot(ip: &str, automate: bool) {
-    info!("[ RUN ] - System wird neugestartet");
-
-    if !automate {
-        let _reboot = Command::new("ssh")
-            .arg(get_sshstring(ip, User::Root))
-            .arg("reboot")
-            .spawn()
-            .unwrap_or_else(|err| { 
-                error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
-                process::exit(1); 
-            });
-    }
-    info!("[ OK ] - Neustart erfolgreich");
 }

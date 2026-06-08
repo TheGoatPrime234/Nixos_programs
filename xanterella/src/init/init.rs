@@ -1,4 +1,4 @@
-use log::{info, error, debug};
+use log::{info, error};
 
 use std::process::{self, Command};
 
@@ -11,12 +11,12 @@ pub fn init_git_email(ip: &str) {
         let mut c = Command::new("ssh");
         c.arg(get_sshstring(ip, User::Cato));
         c.args(["git", "config", "--global", "user.email", "cato.jenisch@gmail.com"]);
-        c.output();
+        let _ = c.output();
         c
     } else {
         let mut c = Command::new("git");
         c.args(["config", "--global", "user.email", "cato.jenisch@gmail.com"]);
-        c.output();
+        let _ = c.output();
         c
     };
     let status = git.status().unwrap_or_else(|err| {
@@ -37,12 +37,12 @@ pub fn init_git_name(ip: &str) {
         let mut c = Command::new("ssh");
         c.arg(get_sshstring(ip, User::Cato));
         c.args(["git", "config", "--global", "user.name", "Xeravus"]);
-        c.output();
+        let _ = c.output();
         c
     } else {
         let mut c = Command::new("git");
         c.args(["config", "--global", "user.name", "Xeravus"]);
-        c.output();
+        let _ = c.output();
         c
     };
     let status = git.status().unwrap_or_else(|err| {

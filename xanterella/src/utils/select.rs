@@ -32,7 +32,7 @@ pub fn select_host(hosts: Taildevices) -> String {
     output_ip 
 }
 
-pub fn select_drive(target_ip: &str, automate: bool) -> String {
+pub fn select_drive(target_ip: &str, automate: &bool) -> String {
     let mut options: Vec<String> = vec![];
     let drives = get_sort_drives(get_drives(&target_ip)).blockdevices;
     for i in &drives {

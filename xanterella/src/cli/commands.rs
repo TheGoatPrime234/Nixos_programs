@@ -6,6 +6,7 @@ use crate::utils::core::*;
 use crate::utils::debug::{list_debug, ListDebug};
 use crate::usb::core::*;
 use crate::installer::core::*;
+use crate::daemon::daemon::*;
 
 #[derive(Parser)]
 #[command(name = "Xanterella")]
@@ -14,7 +15,7 @@ pub struct Cli {
     #[command(subcommand)]
     command: Commands,
     #[arg(long, global = true)]
-    pub debug: bool,
+    pub verbose: bool,
 }
 
 #[derive(Subcommand)]
@@ -33,13 +34,23 @@ pub enum Commands {
         automate: bool,
         #[arg(long = "fast", short = 'f')]
         fast: bool,
+        #[arg(long = "debug", short = 'd')]
+        debug: bool,
     },
     Flash,
+    Daemon {
+        #[arg(long = "automate", short = 'a')]
+        automate: bool,
+        #[arg(long = "fast", short = 'f')]
+        fast: bool,
+        #[arg(long = "debug", short = 'd')]
+        debug: bool,
+    },
 }
 
-pub fn cli_parse() {
+pub async fn cli_parse() {
     let cli = Cli::parse();
-    let log_level = if cli.debug {
+    let log_level = if cli.verbose {
         log::LevelFilter::Debug
     } else {
         log::LevelFilter::Info
@@ -63,11 +74,14 @@ pub fn cli_parse() {
         Commands::Debug { option } => {
             list_debug(option);
         },
-        Commands::RemoteInstall { automate, fast } => {
-            remote_install(automate, fast);
+        Commands::RemoteInstall { automate, fast, debug } => {
+            remote_install(automate, fast, debug);
         },
         Commands::Flash => {
             flash_usb(false);
+        },
+        Commands::Daemon { automate, fast, debug } => {
+            start_daemon(automate, fast, debug).await;
         },
     }
 }
