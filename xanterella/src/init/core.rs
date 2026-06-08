@@ -1,6 +1,6 @@
 use log::info;
 
-use crate::init::github::*;
+use crate::init::init::*;
 
 pub fn init_git(ip: &str) {
     info!("[ RUN ] - Starte Git und GitHub Authentikation");

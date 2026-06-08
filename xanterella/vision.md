@@ -10,7 +10,7 @@
 - [x] Remote USB Flashing
 
 ### 0.25v Xanterella - Auto Init
-- [ ] - Git Init
+- [x] - Git Init
 - [ ] - GitHub Init
 - [ ] - Tailscale Init
 
