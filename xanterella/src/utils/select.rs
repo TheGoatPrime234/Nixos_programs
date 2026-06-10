@@ -1,8 +1,11 @@
-use std::process;
 use log::{debug, error};
 use inquire::Select;
+use strum::IntoEnumIterator;
 
-use crate::installer::get::*;
+use std::process;
+use std::fmt::Display;
+
+use crate::utils::get::*;
 
 pub fn select_host(hosts: Taildevices) -> String {
     let mut options: Vec<String> = vec![];
@@ -29,9 +32,9 @@ pub fn select_host(hosts: Taildevices) -> String {
     output_ip 
 }
 
-pub fn select_drive(target_ip: &String, automate: bool) -> String {
+pub fn select_drive(target_ip: &str, automate: &bool) -> String {
     let mut options: Vec<String> = vec![];
-    let drives = get_drives((&target_ip).to_string()).blockdevices;
+    let drives = get_sort_drives(get_drives(&target_ip)).blockdevices;
     for i in &drives {
         let input = format!("Name: {:<7} - Size: {}", i.name, i.size);
         options.push(input);
@@ -56,4 +59,16 @@ pub fn select_drive(target_ip: &String, automate: bool) -> String {
     } else {
         drives[0].name.clone()
     }
+}
+
+pub fn select_mode<T>(msg: &str) -> T
+where 
+    T: IntoEnumIterator + Display + Clone,
+{
+    let options: Vec<T> = T::iter().collect();
+    let ans = Select::new(msg, options).prompt();
+    ans.unwrap_or_else(|err| {
+        error!("[ FAILED - Konnte den Input nicht auslesen: {}", err);
+        process::exit(1);
+    })
 }

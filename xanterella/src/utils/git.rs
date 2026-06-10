@@ -1,7 +1,8 @@
 use log::{debug, info, error};
+
 use std::process::{self, Command};
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
 pub enum Branches {
     Xanterella,
@@ -9,6 +10,7 @@ pub enum Branches {
 }
 
 pub fn git_full(cm_msg: String) {
+    info!("[ RUN ] - Starte Git Prozedur");
 
     let diff = Command::new("git")
         .args(["diff", "--stat"])

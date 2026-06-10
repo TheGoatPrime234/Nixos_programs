@@ -1,45 +1,36 @@
-use std::process::{self, Command};
 use log::{info, error, debug};
+
+use std::process::{self, Command};
 use std::fs;
+use std::time::Instant;
+use std::time::Duration;
 
-use crate::installer::get::*;
+use crate::utils::get::*;
 
-pub fn build() {
-    info!("[ RUN ] - Starte loken Build");
+pub fn build(debug: &bool) {
+    info!("[ RUN ] - Starte lokalen Build");
     
-    let build = Command::new("nix")
-        .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
-        .current_dir(get_path(Paths::Nixconf))
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte nix build nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !build.status.success() {
-        error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
-        process::exit(1);
+    if !debug {
+        let build = Command::new("nix")
+            .args(["build", ".#nixosConfigurations.crylia.config.system.build.toplevel"])
+            .current_dir(get_path(Paths::Nixconf))
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("Konnte nix build nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !build.status.success() {
+            error!("[ FAILED ] - Lokaler Build fehlgeschlagen: {}", String::from_utf8_lossy(&build.stderr));
+            process::exit(1);
+        }
     }
-
-    info!("[ OK ] - Build erfolgreich");
+    info!("[ OK ] - lokaler Build erfolgreich");
 }
 
-pub fn deploy(ip: &String) {
-    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
-    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
-    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
-    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
-        .unwrap_or_else(|err| { 
-            error!("Konnte Symlink 'result' nicht auflösen: {}", err); 
-            process::exit(1); 
-        })
-        .to_string_lossy()
-        .into_owned();
-    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
-    debug!("System-Pfad im Nix-Store: {}", system_path);
-
-    info!("[ RUN ] - Starte Deployment");
+pub fn copy(ip: &str) {
     info!("[ RUN ] - Starte Copy des Closure");
 
+    let start = Instant::now();
     let copy = Command::new("nix")
         .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
         .args([
@@ -61,14 +52,24 @@ pub fn deploy(ip: &String) {
         error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
         process::exit(1);
     }
-    info!("[ OK ] - Closure Copy erfolgreich");
+    info!("[ OK ] - Copy des Closure erfolgreich");
+    info!("[ TIME ] Copy des Closure: {:?}", start.elapsed());
+}
 
-    info!("[ RUN ] - Starte die Installation auf dem Zielgerät");
+pub fn profile(ip: &str) {
+    info!("[ RUN ] - Starte Aktivierung des Profiles");
 
-    info!("[ RUN ] - Aktivierung des Profiles");
+    let system_path = fs::read_link(format!("{}/result", get_path(Paths::Nixconf)))
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte Symlink 'result' nicht auflösen: {}", err); 
+            process::exit(1); 
+        })
+        .to_string_lossy()
+        .into_owned();
+    debug!("System-Pfad im Nix-Store: {}", system_path);
+    let profile_cmd = format!("nix-env --store /mnt -p /mnt/nix/var/nix/profiles/system --set {}", system_path);
     let profile = Command::new("ssh")
-        .arg(get_sshstring(ip))
-        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(get_sshstring(ip, User::Root))
         .arg(&profile_cmd)
         .output()
         .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'nix' nicht starten: {}", err); process::exit(1); });
@@ -77,11 +78,14 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktivierung des Profiles erfolgreich");
+}
 
-    info!("[ RUN ] - Bereite Dateisystem für nixos-enter vor");
+pub fn prep(ip: &str) {
+    info!("[ RUN ] - Starte Vorbereitung des Dateisystem für nixos-enter vor");
+
+    let prep_cmd = "mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS";
     let prep = Command::new("ssh")
-        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
-        .arg(get_sshstring(ip))
+        .arg(get_sshstring(ip, User::Root))
         .arg(prep_cmd)
         .output()
         .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'nix' nicht starten: {}", err); process::exit(1); });
@@ -91,11 +95,14 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Vorbereitung erfolgreich");
+}
 
+pub fn activate(ip: &str) {
     info!("[ RUN ] - Aktiviere das System");
+
+    let activate_cmd = "NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command '/nix/var/nix/profiles/system/activate'";
     let activate = Command::new("ssh")
-        .arg(get_sshstring(ip))
-        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(get_sshstring(ip, User::Root))
         .arg(activate_cmd)
         .output()
         .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'nix' nicht starten: {}", err); process::exit(1); });
@@ -104,11 +111,14 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktivierung des Systems erfolgreich");
+}
 
-    info!("[ RUN ] - Aktualisiere Bootloader");
+pub fn bootloader(ip: &str) {
+    info!("[ RUN ] - Starte Aktualisiere Bootloader");
+
+    let bootloader_cmd = "nixos-enter --root /mnt --command 'NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot'";
     let bootloader = Command::new("ssh")
-        .arg(get_sshstring(ip))
-        .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
+        .arg(get_sshstring(ip, User::Root))
         .arg(bootloader_cmd)
         .output()
         .unwrap_or_else(|err| { error!("Konnte 'ssh' oder 'nix' nicht starten: {}", err); process::exit(1); });
@@ -117,21 +127,28 @@ pub fn deploy(ip: &String) {
         process::exit(1);
     }
     info!("[ OK ] - Aktualisierung des Bootloaders erfolgreich");
-
-    info!("[ OK ] - Installation erfolgreich abgeschlossen! Das System kann neu gestartet werden.");
 }
 
-pub fn reboot(ip: &String) {
-    info!("[ RUN ] - System wird neugestartet");
+pub fn reboot(ip: &str, debug: &bool) {
+    info!("[ RUN ] - Logge aus Tailscale aus und starte neu...");
 
-    let reboot = Command::new("ssh")
-        .arg(get_sshstring(ip))
-        .arg("reboot")
-        .spawn()
-        .unwrap_or_else(|err| { 
-            error!("Konnte 'ssh' oder 'reboot' nicht starten: {}", err); 
-            process::exit(1); 
-        });
-
-    info!("System neugestartet");
+    if !debug {
+        let magic_cmd = "nohup sh -c 'sleep 2 && tailscale logout && reboot' > /dev/null 2>&1 &";
+        let logout_reboot = Command::new("ssh")
+            .arg(format!("root@{}", ip))
+            .arg(magic_cmd)
+            .output();
+        match logout_reboot {
+            Ok(output) => {
+                if output.status.success() {
+                    info!("[ OK ] - Befehl abgesetzt. Das Gerät loggt sich aus und startet neu.");
+                } else {
+                    error!("[ FAILED ] - SSH Befehl schlug fehl: {}", String::from_utf8_lossy(&output.stderr));
+                }
+            }
+            Err(e) => {
+                error!("[ FAILED ] - Konnte SSH nicht ausführen: {}", e);
+            }
+        }
+    }
 }

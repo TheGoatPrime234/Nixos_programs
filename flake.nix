@@ -23,6 +23,7 @@
           clippy
           rust-analyzer
           glib
+          tokei
         ];
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -37,6 +38,7 @@
           clippy
           rust-analyzer
           glib
+          tokei
         ];
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -50,6 +52,7 @@
           rustfmt
           clippy
           rust-analyzer
+          tokei
         ];
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -63,6 +66,7 @@
           rustfmt
           clippy
           rust-analyzer
+          tokei
         ];
         nativeBuildInputs = [
           pkgs.pkg-config

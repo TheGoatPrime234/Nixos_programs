@@ -1,10 +1,11 @@
-use std::process::Command;
 use clap::{Parser, Subcommand};
 
-use crate::utils::check::ssh_ping;
-use crate::utils::debug::{list_debug, ListDebug};
 
+use crate::utils::core::*;
+use crate::utils::debug::{list_debug, ListDebug};
+use crate::usb::core::*;
 use crate::installer::core::*;
+use crate::daemon::daemon::*;
 
 #[derive(Parser)]
 #[command(name = "Xanterella")]
@@ -13,12 +14,12 @@ pub struct Cli {
     #[command(subcommand)]
     command: Commands,
     #[arg(long, global = true)]
-    pub debug: bool,
+    pub verbose: bool,
 }
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Hostname,
+    Init,
     Ping {
         ip: String,
     },
@@ -32,12 +33,23 @@ pub enum Commands {
         automate: bool,
         #[arg(long = "fast", short = 'f')]
         fast: bool,
+        #[arg(long = "debug", short = 'd')]
+        debug: bool,
+    },
+    Flash,
+    Daemon {
+        #[arg(long = "automate", short = 'a')]
+        automate: bool,
+        #[arg(long = "fast", short = 'f')]
+        fast: bool,
+        #[arg(long = "debug", short = 'd')]
+        debug: bool,
     },
 }
 
-pub fn cli_parse() {
+pub async fn cli_parse() {
     let cli = Cli::parse();
-    let log_level = if cli.debug {
+    let log_level = if cli.verbose {
         log::LevelFilter::Debug
     } else {
         log::LevelFilter::Info
@@ -49,20 +61,36 @@ pub fn cli_parse() {
         .format_level(false)
         .init();
     match &cli.command {
-        Commands::Hostname => {
-            let _ = Command::new("hostname").spawn();
+        Commands::Init => {
+            init();
         },
         Commands::Ping { ip } => {
-            ssh_ping(ip);
+            ping_full(ip);
         },
         Commands::Clean => {
             clean();
         },
         Commands::Debug { option } => {
-            list_debug(&option);
+            list_debug(option);
         },
-        Commands::RemoteInstall { automate, fast } => {
-            remote_install(&automate, &fast);
+        Commands::RemoteInstall { automate, fast, debug } => {
+            remote_install(automate, fast, debug);
         },
+        Commands::Flash => {
+            flash_usb(false);
+        },
+        Commands::Daemon { automate, fast, debug } => {
+            start_daemon(automate, fast, debug).await;
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+    #[test]
+    fn verify_cli() {
+        Cli::command().debug_assert();
     }
 }

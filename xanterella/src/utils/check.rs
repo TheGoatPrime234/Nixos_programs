@@ -1,9 +1,12 @@
-use std::process::{self, Command};
 use log::{info, error};
 
-use crate::installer::get::*;
+use std::process::{self, Command};
 
-pub fn ssh_ping(ip: &String) {
+use crate::utils::get::*;
+
+pub fn ping(ip: &str) {
+    info!("[ RUN ] - Starte Ping");
+
     let ping = Command::new("ping")
         .args(["-c", "1"])
         .args(["-W", "1"])
@@ -18,24 +21,29 @@ pub fn ssh_ping(ip: &String) {
         error!("[ FAILED ] - Konnte das Gerät nicht pingen: {}", ip);
         process::exit(1);
     }
-
     info!("[ OK ] - Ping erfolgreich");
-    let ssh_command = format!("root@{}", ip);
+}
+
+pub fn ping_ssh(ip: &str) {
+    info!("[ RUN ] - Starte SSH Ping");
+
     let ssh = Command::new("ssh")
-        .arg(&ssh_command)
+        .arg(get_sshstring(ip, User::Root))
         .output()
         .unwrap_or_else(|err| { 
             error!("[ FAILED ] - Konnte Tailscale nicht starten: {}", err); 
             process::exit(1); 
         });
     if !ssh.status.success() {
-        error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", ssh_command);
+        error!("[ FAILED ] - Konnte das Gerät nicht über ssh erreichen: {}", String::from_utf8_lossy(&ssh.stderr));
         process::exit(1);
     }
-    info!("[ OK ] - SSH-PING erfolgreich");
+    info!("[ OK ] - SSH PING erfolgreich");
 }
 
 pub fn nix_check() {
+    info!("[ RUN ] - Starte Flake Check");
+
     let check = Command::new("nixos-rebuild")
         .arg("dry-build")
         .arg("--flake")
@@ -47,7 +55,7 @@ pub fn nix_check() {
             process::exit(1); 
         });
     if check.status.success() {
-        info!("[ OK ] - Nix Flake ist funktionstüchtig");
+        info!("[ OK ] - Flake Check erfolgreich");
     } else {
         error!("[ FAILED ] - Die Nix Flake ist nicht funktionierend: {}", String::from_utf8_lossy(&check.stderr));
         process::exit(1);
