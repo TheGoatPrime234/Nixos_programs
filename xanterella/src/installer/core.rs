@@ -8,6 +8,7 @@ use crate::utils::check::*;
 use crate::utils::core::*;
 use crate::utils::select::*;
 use crate::utils::get::*;
+use crate::init::core::*;
 
 pub fn remote_install(automate: &bool, fast: &bool, debug: &bool) {
     let target_ip = select_host(get_taildevices());
@@ -131,6 +132,7 @@ pub fn deploy(ip: &str, debug: &bool) {
         profile(ip);
         prep(ip);
         activate(ip);
+        inject(ip);
         bootloader(ip);
     }
     info!("[ OK ] - Deployment erfolgreich");

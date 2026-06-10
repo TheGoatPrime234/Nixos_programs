@@ -79,3 +79,22 @@ pub fn init_github(ip: &str) {
     }
     info!("[ OK ] - GitHub Verknüpfung erfolgreich");
 }
+
+pub fn init_pull_xanterella(ip: &str) {
+    info!("[ RUN ] - Pull Xanterella Git Repo");
+
+    let pull = Command::new("ssh")
+        .arg(get_sshstring(ip, User::Root))
+        .args(["git", "pull", "https://github.com/Xeravus/Xanterella.git"])
+        .current_dir(get_path(Paths::Home))
+        .output()
+        .unwrap_or_else(|err| { 
+            error!("[ FAILED ] - Konnte das Repo nicht pullen: {}", err); 
+            process::exit(1); 
+        });
+    if !pull.status.success() {
+        error!("[ FAILED ] - Konnte das Repo nicht pullen: {}", String::from_utf8_lossy(&pull.stderr));
+        process::exit(1);
+    }
+    info!("[ OK ] - Xanterella Git Repo erfolgreich gepullt");
+}

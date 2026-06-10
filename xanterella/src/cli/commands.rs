@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
 
-use std::process::Command;
 
 use crate::utils::core::*;
 use crate::utils::debug::{list_debug, ListDebug};
@@ -20,7 +19,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Hostname,
+    Init,
     Ping {
         ip: String,
     },
@@ -62,8 +61,8 @@ pub async fn cli_parse() {
         .format_level(false)
         .init();
     match &cli.command {
-        Commands::Hostname => {
-            let _ = Command::new("hostname").spawn();
+        Commands::Init => {
+            init();
         },
         Commands::Ping { ip } => {
             ping_full(ip);

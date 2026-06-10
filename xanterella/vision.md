@@ -12,12 +12,14 @@
 ## 0.3v Xanterella - Daemon
 - [x] Basic USB Discovery Daemon
 - [x] Remote-Install Deamon
-- [ ] Small Approval App
 
 ## 0.4v Xanterella - Auto Init
-- [x] - Git Init
-- [ ] - GitHub Init
-- [ ] - Tailscale Init
+- [x] Generall Config File
+- [ ] Wlan Injection
+- [ ] Tailscale Key Injection
+- [x] Git Init
+- [ ] GitHub Init
+- [ ] Tailscale Init
 
 ## 0.5v Xanterella - Config
 - [ ] Basic add Host
@@ -26,3 +28,13 @@
 
 ## 0.6v Xanterella - TUI
 - [ ] From CLI to TUI
+
+## 0.7v Xanterella - Extended Daemon
+- [ ] Advanced Daemon
+    - [ ] Approval App/Flow
+    - [ ] Aggressive Mode
+    - [ ] Remote Builder
+- [ ] Auto add Host
+    - [ ] Add Host in hosts/
+    - [ ] Add Host in Colmena-Hosts
+    - [ ] Auto colmena deploy after install

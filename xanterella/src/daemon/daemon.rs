@@ -28,8 +28,8 @@ pub fn check_for_installer(active_installs: &mut HashSet<String>, automate: bool
             if !active_installs.contains(&ip) {
                 info!("[ OK ] - Installer gefunden: {}", ip);
                 active_installs.insert(ip.clone());
+                let _ = sleep(time::Duration::from_secs(10));
                 tokio::spawn(async move {
-                    let _ = sleep(time::Duration::from_secs(3));
                     daemon_install(automate.clone(), fast.clone(), ip.to_string().clone(), debug.clone())
                 });
             }

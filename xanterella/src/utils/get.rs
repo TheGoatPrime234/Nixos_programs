@@ -40,7 +40,9 @@ pub struct DeviceInfo {
 }
 
 pub enum Paths {
+    Home,
     Nixconf,
+    Config,
 }
 
 pub enum User {
@@ -177,9 +179,11 @@ pub fn get_sshstring(ip: &str, user: User) -> String {
     let result = match user {
         User::Root => {
             format!("root@{}", ip)
+            //format!("root@{} -o StrictHostKeyChecking=no UserKnownHostsFile=/dev/null", ip)
         },
         User::Cato => {
             format!("cato@{}", ip)
+            //format!("cato@{} -o StrictHostKeyChecking=no UserKnownHostsFile=/dev/null", ip)
         },
     };
     result
@@ -199,8 +203,11 @@ pub fn get_drives_name(primdrive: &str, number: i8) -> String {
 pub fn get_path(option: Paths) -> String {
     let home = env::var("HOME").expect("[ FAILED ] - Konnte die Home Variable nicht extrahieren");
     let nixconfig = PathBuf::from(&home).join("xanterella");
+    let config = PathBuf::from(&home).join(".config").join("xanterella");
     let result: PathBuf = match option {
+        Paths::Home => home.into(),
         Paths::Nixconf => nixconfig,
+        Paths::Config => config,
     };
     result.to_str().expect("[ FAILED ] - Gen Path ist fehlgeschlagen").to_string()
 }
@@ -236,7 +243,6 @@ pub fn get_iso(mode: FlashMode, ip: &str) -> String {
             let iso_path = format!("realpath {}/result/iso/*.iso", get_path(Paths::Nixconf));
             let realpath = Command::new("ssh")
                 .arg(get_sshstring(ip, User::Root))
-                .args(["-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"])
                 .arg(iso_path)
                 .output()
                 .unwrap_or_else(|err| { 
