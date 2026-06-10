@@ -1,0 +1,23 @@
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - stable 
+      - */stable
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dtolnay/rust-toolchain@stable
+        - name: Run tests
+        - uses: actions/checkout@v4
+        - name: Build
+          run: cargo build --verbose
+        - name: Run tests
+          run: cargo test --verbose
