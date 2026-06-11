@@ -27,30 +27,48 @@ pub fn build(debug: &bool) {
     info!("[ OK ] - lokaler Build erfolgreich");
 }
 
-pub fn copy(ip: &str) {
+pub fn copy(ip: &str, fast: &bool) {
     info!("[ RUN ] - Starte Copy des Closure");
 
     let start = Instant::now();
-    let copy = Command::new("nix")
-        .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -C")
-        .args([
-            "copy", 
-            "--no-check-sigs",
-            "--substitute-on-destination", 
-            "--to", 
-            &format!("ssh-ng://root@{}?remote-store=local%3Froot%3D/mnt", ip), 
-            "./result"
-        ])
-        .current_dir(get_path(Paths::Nixconf))
-        .output()
-        .unwrap_or_else(|err| { 
-            error!("Konnte nix copy nicht starten: {}", err); 
-            process::exit(1); 
-        });
-    if !copy.status.success() {
-        let err = String::from_utf8_lossy(&copy.stderr);
-        error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
-        process::exit(1);
+    if !fast {
+        let fast_cmd = format!("nix-store --export $(nix.store -qR ./result) | zstd -T0 -3 | ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -C root@{} 'zstdcat | nix-store --store /mnt --import'", ip);
+        let copy = Command::new("sh")
+            .arg("-c")
+            .arg(fast_cmd)
+            .current_dir(get_path(Paths::Nixconf))
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("Konnte nix copy nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !copy.status.success() {
+            let err = String::from_utf8_lossy(&copy.stderr);
+            error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
+            process::exit(1);
+        }
+    } else {
+        let copy = Command::new("nix")
+            .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -C")
+            .args([
+                "copy", 
+                "--no-check-sigs",
+                "--substitute-on-destination", 
+                "--to", 
+                &format!("ssh-ng://root@{}?remote-store=local%3Froot%3D/mnt", ip), 
+                "./result"
+            ])
+            .current_dir(get_path(Paths::Nixconf))
+            .output()
+            .unwrap_or_else(|err| { 
+                error!("Konnte nix copy nicht starten: {}", err); 
+                process::exit(1); 
+            });
+        if !copy.status.success() {
+            let err = String::from_utf8_lossy(&copy.stderr);
+            error!("[ FAILED ] - Kopieren der System-Closure fehlgeschlagen:\n{}", err);
+            process::exit(1);
+        }
     }
     info!("[ OK ] - Copy des Closure erfolgreich");
     info!("[ TIME ] Copy des Closure: {:?}", start.elapsed());

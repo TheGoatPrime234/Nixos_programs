@@ -13,30 +13,18 @@ use crate::init::core::*;
 pub fn remote_install(automate: &bool, fast: &bool, debug: &bool) {
     let target_ip = select_host(get_taildevices());
     ping_full(&target_ip);
-    if *fast {
-        let primdrive = select_drive(&target_ip, automate);
-        drives_part(&primdrive, debug, &target_ip);
-        drives_format(&primdrive, debug, &target_ip);
-        crylia_edit_start(get_hardware(&target_ip));
-        git_full(String::from("Xanterella Remote-Install (fast)"));
-        drives_mount(&primdrive, &target_ip);
-        build(debug);
-        deploy(&target_ip, debug);
-        reboot(&target_ip, debug);
-    } else {
-        crylia_edit_start(get_hardware(&target_ip));
-        git_full(String::from("Xanterella Remote-Install"));
-        if !*fast {
-            nix_check();
-        };
-        let primdrive = select_drive(&target_ip, automate);
-        drives_part(&primdrive, debug, &target_ip);
-        drives_format(&primdrive, debug, &target_ip);
-        drives_mount(&primdrive, &target_ip);
-        build(debug);
-        deploy(&target_ip, debug);
-        reboot(&target_ip, debug);
-    }
+    crylia_edit_start(get_hardware(&target_ip));
+    git_full(String::from("Xanterella Remote-Install"));
+    if !*fast {
+        nix_check();
+    };
+    let primdrive = select_drive(&target_ip, automate);
+    drives_part(&primdrive, debug, &target_ip);
+    drives_format(&primdrive, debug, &target_ip);
+    drives_mount(&primdrive, &target_ip);
+    build(debug);
+    deploy(&target_ip, fast, debug);
+    reboot(&target_ip, debug);
     // -----------------------------------------------------
     clean();
 }
@@ -44,30 +32,18 @@ pub fn remote_install(automate: &bool, fast: &bool, debug: &bool) {
 pub fn daemon_install(automate: bool, fast: bool, ip: String, debug: bool) {
     let target_ip: &str = &ip;
     ping_full(&target_ip);
-    if fast {
-        let primdrive = select_drive(&target_ip, &automate);
-        drives_part(&primdrive, &debug, &target_ip);
-        drives_format(&primdrive, &debug, &target_ip);
-        crylia_edit_start(get_hardware(&target_ip));
-        git_full(String::from("Xanterella Remote-Install (fast)"));
-        drives_mount(&primdrive, &target_ip);
-        build(&debug);
-        deploy(&target_ip, &debug);
-        reboot(&target_ip, &false);
-    } else {
-        crylia_edit_start(get_hardware(&target_ip));
-        git_full(String::from("Xanterella Remote-Install"));
-        if !fast {
-            nix_check();
-        };
-        let primdrive = select_drive(&target_ip, &automate);
-        drives_part(&primdrive, &debug, &target_ip);
-        drives_format(&primdrive, &debug, &target_ip);
-        drives_mount(&primdrive, &target_ip);
-        build(&debug);
-        deploy(&target_ip, &debug);
-        reboot(&target_ip, &false);
-    }
+    crylia_edit_start(get_hardware(&target_ip));
+    git_full(String::from("Xanterella Remote-Install"));
+    if !fast {
+        nix_check();
+    };
+    let primdrive = select_drive(&target_ip, &automate);
+    drives_part(&primdrive, &debug, &target_ip);
+    drives_format(&primdrive, &debug, &target_ip);
+    drives_mount(&primdrive, &target_ip);
+    build(&debug);
+    deploy(&target_ip, &fast, &debug);
+    reboot(&target_ip, &false);
     // -----------------------------------------------------
     clean();
 }
@@ -124,11 +100,11 @@ pub fn drives_mount(primdrive: &str, ip: &str) {
     info!("[ OK ] - Mounting erfolgreich");
 }
 
-pub fn deploy(ip: &str, debug: &bool) {
+pub fn deploy(ip: &str, fast: &bool, debug: &bool) {
     info!("[ RUN ] - Starte Deployment");
 
     if !debug {
-        copy(ip);
+        copy(ip, fast);
         profile(ip);
         prep(ip);
         activate(ip);
