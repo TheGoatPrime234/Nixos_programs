@@ -32,7 +32,7 @@ pub fn copy(ip: &str) {
 
     let start = Instant::now();
     let copy = Command::new("nix")
-        .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null")
+        .env("NIX_SSHOPTS", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -C")
         .args([
             "copy", 
             "--no-check-sigs",
