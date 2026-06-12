@@ -14,9 +14,12 @@
 - [x] Remote-Install Deamon
 
 ## 0.4v Xanterella - Auto Init
+### 0.41v Xanterella - Auto Init - Injection
 - [x] Generall Config File
 - [x] Wlan Injection
 - [x] Tailscale Key Injection
+
+### 0.42v Xanterella - Auto Init - Git/GitHub/Tailscale
 - [x] Git Init
 - [ ] GitHub Init
 - [ ] Tailscale Init
