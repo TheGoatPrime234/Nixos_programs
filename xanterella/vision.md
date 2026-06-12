@@ -15,8 +15,8 @@
 
 ## 0.4v Xanterella - Auto Init
 - [x] Generall Config File
-- [ ] Wlan Injection
-- [ ] Tailscale Key Injection
+- [x] Wlan Injection
+- [x] Tailscale Key Injection
 - [x] Git Init
 - [ ] GitHub Init
 - [ ] Tailscale Init

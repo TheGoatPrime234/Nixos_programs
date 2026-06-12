@@ -287,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_sshstring() {
-        assert_eq!(get_sshstring("192.125.142.2"), "root@192.125.142.2")
+        assert_eq!(get_sshstring("192.125.142.2", User::Root), "root@192.125.142.2")
     }
 
     #[test]
