@@ -14,7 +14,7 @@ pub fn part_efi(drive: &str, debug: &bool, ip: &str) {
             .arg("-s")
             .arg(drive)
             .args(["mklabel", "gpt"])
-            .args(["mkpart", "ESP", "fat32", "1Mib", "512MiB"])
+            .args(["mkpart", "disk-main-boot", "fat32", "1Mib", "512MiB"])
             .args(["set", "1", "esp", "on"])
             .output()
             .unwrap_or_else(|err| { 
@@ -38,7 +38,7 @@ pub fn part_root(drive: &str, debug: &bool, ip: &str) {
             .arg("parted")
             .arg("-s")
             .arg(drive)
-            .args(["mkpart", "primary", "ext4", "512MiB", "100%"])
+            .args(["mkpart", "disk-main-root", "ext4", "512MiB", "100%"])
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte parted nicht starten: {}", err); 
@@ -59,7 +59,7 @@ pub fn format_efi(primdrive: &str, debug: &bool, ip: &str) {
             .arg(get_sshstring(ip, User::Root))
             .arg("mkfs.fat")
             .arg(get_drives_name(primdrive, 1))
-            .args(["-F", "32"])
+            .args(["-F", "32", "-n", "boot"])
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); 
@@ -80,6 +80,7 @@ pub fn format_root(primdrive: &str, debug: &bool, ip: &str) {
             .arg(get_sshstring(ip, User::Root))
             .arg("mkfs.ext4")
             .arg(get_drives_name(primdrive, 2))
+            .args(["-L", "nixos"])
             .output()
             .unwrap_or_else(|err| { 
                 error!("[ FAILED ] - Konnte Mkfs.ext4 nicht starten: {}", err); 
